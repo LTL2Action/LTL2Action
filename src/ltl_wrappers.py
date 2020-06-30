@@ -41,8 +41,6 @@ class LTLEnv(gym.Wrapper):
     def reset(self):
         self.obs = self.env.reset()
 
-        self.env.show()
-
         # Defining an LTL goal
         self.ltl_goal = self.sample_ltl_goal()
 
@@ -54,7 +52,7 @@ class LTLEnv(gym.Wrapper):
 
     def step(self, action):
         # executing the action in the environment
-        next_obs, original_reward, done, info = self.env.step(action)
+        next_obs, original_reward, env_done, info = self.env.step(action)
 
         # progressing the ltl formula
         truth_assignment = self.get_events(self.obs, action, next_obs)
@@ -62,19 +60,41 @@ class LTLEnv(gym.Wrapper):
         self.obs      = next_obs
 
         # Computing the LTL reward and done signal
-        ltl_reward = 0
+        ltl_reward = 0.0
         ltl_done   = False
         if self.ltl_goal == 'True':
-            ltl_reward = 1
+            ltl_reward = 1.0
             ltl_done   = True
         if self.ltl_goal == 'False':
-            ltl_reward = -1
+            ltl_reward = -1.0
             ltl_done   = True
 
         # Computing the new observation and returning the outcome of this action
         ltl_obs = {'features': self.obs,'ltl': self.ltl_goal}
-        return ltl_obs, original_reward + ltl_reward, done or ltl_done, info
+        reward  = original_reward + ltl_reward
+        done    = env_done or ltl_done
+        return ltl_obs, reward, done, info
 
+
+class IgnoreLTLWrapper(gym.Wrapper):
+    def __init__(self, env):
+        """
+        Removes the LTL formula from an LTLEnv
+        It is useful to check the performance of off-the-shelf agents
+        """
+        super().__init__(env)
+        self.observation_space =  env.observation_space['features']
+
+    def reset(self):
+        obs = self.env.reset()
+        obs = obs['features']
+        return obs
+
+    def step(self, action):
+        # executing the action in the environment
+        obs, reward, done, info = self.env.step(action)
+        obs = obs['features']
+        return obs, reward, done, info 
 
 
 class LTLLetterEnv(LTLEnv):
@@ -102,8 +122,10 @@ class LTLLetterEnv(LTLEnv):
         #)
         # NOTE: The propositions must be represented by a char
         return ('until',('not','a'),'c')
+        
 
     def get_events(self, obs, act, next_obs):
         # This function must return the events that currently hold on the environment
         # NOTE: The events are represented by a string containing the propositions with positive values only (e.g., "ac" means that only propositions 'a' and 'b' hold)
         return self.env.get_events()
+

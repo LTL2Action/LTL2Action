@@ -50,9 +50,10 @@ class LetterEnv(gym.Env):
         agent_j = (self.agent[1] + dj + self.grid_size) % self.grid_size
         self.agent = agent_i,agent_j
         self.time += 1
-        reward = 0
+        reward = 0.0
         done = self.time > self.timeout
         obs = self._get_observation()
+
         return obs, reward, done, {}
 
     def _get_observation(self):
@@ -84,7 +85,6 @@ class LetterEnv(gym.Env):
             # Checking that the map is valid
             if _is_valid_map(self.map, self.grid_size, self.actions):
                 break
-            #print("invalid")
             self.map = None
 
         # Locating the agent into (0,0)
@@ -137,6 +137,10 @@ class LetterEnv4x4(LetterEnv):
     def __init__(self):
         super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=False, timeout=100)
 
+
+class LetterEnv7x7(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=False, timeout=1000)
 
 # This code allow to play a game (for debugging purposes)
 if __name__ == '__main__':
