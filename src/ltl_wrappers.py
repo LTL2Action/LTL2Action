@@ -121,8 +121,8 @@ class LTLLetterEnv(LTLEnv):
         #    ('until','True', ('and', 'a', ('until','True', ('and', 'b', ('until','True','c')))))
         #)
         # NOTE: The propositions must be represented by a char
-        return ('until',('not','a'),'c')
-        
+        return ('until',('not','a'),'b')
+        #return ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
 
     def get_events(self, obs, act, next_obs):
         # This function must return the events that currently hold on the environment

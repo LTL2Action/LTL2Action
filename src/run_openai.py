@@ -150,30 +150,43 @@ def run_agent(agent, env_id, run_id):
 
 def test_env():
     # Creating the memory-based environments
-    env = build_env("Letter-4x4-v0", "dqn")
+    env = gym.make("Letter-4x4-v0")
+    env = ltl_wrappers.LTLLetterEnv(env)
+    str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
     import random
     for _ in range(10):
         obs = env.reset()
-        print(env.action_space)
-        print(env.observation_space)
-        print(obs)
+        #print(env.action_space)
+        #print(env.observation_space)
+        #print(obs)
         #print(obs["ltl"])
         #print(np.array(obs["features"]).shape)
-        input()
         #print(obs.count(), len(obs), np.array(obs).shape)
         #input()
         for _ in range(10000):
-            a = random.randrange(env.action_space.n)
+            env.show()
+            print(obs["ltl"])
+            print("\nAction? ", end="")
+            a = input()
+            while a not in str_to_action:
+                a = input()
+            print()
+            a = str_to_action[a]
+            #a = random.randrange(env.action_space.n)
             obs, reward, done, info = env.step(a%env.action_space.n)
 
-            print(np.array(obs).shape)
+            if done:
+                env.show()
+                print(reward)
+                print("Done!")
+                input()
+                break
+
+            #print(np.array(obs).shape)
             #print(obs["ltl"])
             #print(np.array(obs["features"]).shape)
             print(reward)
-
-            if done:
-                break
 
     env.close()
     exit()
@@ -181,7 +194,7 @@ def test_env():
 
 if __name__ == '__main__':
 
-    #test_env()
+    test_env()
     
     agent  = 'ppo'
     env_id = 'Letter-4x4-v0'

@@ -38,6 +38,22 @@ def _subsume_until(f1, f2):
 
 
 def progress(ltl_formula, truth_assignment):
+    new_ltl = _progress_real(ltl_formula, truth_assignment)
+    return new_ltl #_clean_ltl(new_ltl)
+
+def _clean_ltl(ltl_formula):
+    """
+    Removes duplicate ORs
+    """
+    # TODO: 
+    #   - Extract all ORs
+    #   - Remove duplicates
+    #   - Return ORs without duplicates and following some ordering rule
+    #   - Check for duplicates above in the hierarchy  
+    pass
+
+
+def _progress_real(ltl_formula, truth_assignment):
     if type(ltl_formula) == str:
         # True, False, or proposition
         if len(ltl_formula) == 1:
@@ -66,8 +82,8 @@ def progress(ltl_formula, truth_assignment):
         if res1 == 'True': return res2
         if res2 == 'True': return res1
         if res1 == res2:   return res1
-        if _subsume_until(res1, res2): return res2
-        if _subsume_until(res2, res1): return res1
+        #if _subsume_until(res1, res2): return res2
+        #if _subsume_until(res2, res1): return res1
         return ('and',res1,res2)
 
     if ltl_formula[0] == 'or':
@@ -78,8 +94,8 @@ def progress(ltl_formula, truth_assignment):
         if res1 == 'False': return res2
         if res2 == 'False': return res1
         if res1 == res2:    return res1
-        if _subsume_until(res1, res2): return res1
-        if _subsume_until(res2, res1): return res2
+        #if _subsume_until(res1, res2): return res1
+        #if _subsume_until(res2, res1): return res2
         return ('or',res1,res2)
     
     if ltl_formula[0] == 'next':
@@ -100,5 +116,9 @@ def progress(ltl_formula, truth_assignment):
             return 'True'
         if res2 == 'False':
             return f1
-        return res2 #('or', res2, f1)
+
+        # Returning ('or', res2, f1)
+        #if _subsume_until(f1, res2): return f1
+        #if _subsume_until(res2, f1): return res2
+        return ('or', res2, f1)
 
