@@ -1,3 +1,8 @@
+"""
+These functions preprocess the observations. 
+When trying more sophisticated encoding for LTL, we might have to modify this code.
+"""
+
 import os
 import json
 import numpy

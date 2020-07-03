@@ -1,3 +1,9 @@
+"""
+This class defines the environments that we are going to use.
+Note that this is the place to include the right LTL-Wrapper for each environment.
+"""
+
+
 import gym
 import gym_minigrid
 import envs.gym_letters
@@ -14,10 +20,3 @@ def make_env(env_key, seed=None):
     env = ltl_wrappers.LTLLetterEnv(env)
 
     return env
-
-"""
-def make_env(env_key, seed=None):
-    env = gym.make(env_key)
-    env.seed(seed)
-    return env
-"""

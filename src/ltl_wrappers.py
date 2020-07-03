@@ -1,9 +1,23 @@
+"""
+These are simple wrappers that will include LTL goals to any given environment.
+It also progress the formulas as the agent interacts with the envirionment.
+
+However, each environment must implement the followng functions: 
+    - *get_events(...)*: Returns the propositions that currently hold on the environment.
+    - *sample_ltl_goal(...)*: Returns a new (randomly generated) LTL goal for the episode. 
+
+Notes about LTLEnv:
+    - The episode ends if the LTL goal is progressed to True or False.
+    - If the LTL goal becomes True, then an extra +1 reward is given to the agent.
+    - If the LTL goal becomes False, then an extra -1 reward is given to the agent.
+    - Otherwise, the agent gets the same reward given by the original environment.
+"""
+
+
 import numpy as np
 import gym
 from gym import spaces
 import ltl_progression, random
-#from collections import deque
-#from baselines.common.atari_wrappers import LazyFrames
 
 
 class LTLEnv(gym.Wrapper):
@@ -102,17 +116,6 @@ class IgnoreLTLWrapper(gym.Wrapper):
 
 class LTLLetterEnv(LTLEnv):
     def __init__(self, env):
-        """
-        LTL environment
-        --------------------
-        It adds an LTL objective to the current environment
-            - The observations become a dictionary with an added "ltl" field
-              specifying the LTL objective
-            - It also automatically progress the formula and generates an 
-              appropriate reward function
-            - However, it does requires the user to define a labeling function
-              and a set of training formulas
-        """
         super().__init__(env)
         self.propositions = self.env.get_propositions()
 

@@ -1,3 +1,14 @@
+"""
+This is the description of the deep NN currently being used.
+It is a small CNN for the features with an GRU encoding of the LTL task.
+The features and LTL are preprocessed by utils.format.get_obss_preprocessor(...) function:
+    - In that function, I transformed the LTL tuple representation into a text representation:
+    - Input:  ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
+    - output: ['until', 'not', 'a', 'and', 'b', 'until', 'not', 'c', 'd']
+Each of those tokens get a one-hot embedding representation by the utils.format.Vocabulary class.
+"""
+
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,3 +1,21 @@
+"""
+This code allows to progress LTL formulas. It requires installing the SPOT library:
+    - https://spot.lrde.epita.fr/install.html
+To encode LTL formulas, we use tuples, e.g., 
+    (
+        'and',
+        ('until','True', ('and', 'd', ('until','True','c'))),
+        ('until','True', ('and', 'a', ('until','True', ('and', 'b', ('until','True','c')))))
+    )
+Some notes about the format:
+    - It supports the following temporal operators: "next", "until", "always", and "eventually". 
+    - It supports the following logical operators: "not", "or", "and".
+    - Propositions are assume to be one char.
+    - Negations are always followed by a proposition.
+    - true and false are encoded as "True" and "False"
+"""
+
+
 from sympy import *
 from sympy.logic import simplify_logic
 from sympy.logic.boolalg import And, Or, Not

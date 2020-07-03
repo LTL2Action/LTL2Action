@@ -1,3 +1,9 @@
+"""
+This code uses the OpenAI baselines to learn the policies. 
+However, the current implementation ignores the LTL formula.
+I left this code here as a reference and for debugging purposes. 
+"""
+
 try:
     from mpi4py import MPI
 except ImportError:
@@ -147,54 +153,7 @@ def run_agent(agent, env_id, run_id):
     env.close()
 
 
-
-def test_env():
-    # Creating the memory-based environments
-    env = gym.make("Letter-4x4-v0")
-    env = ltl_wrappers.LTLLetterEnv(env)
-    str_to_action = {"w":0,"s":1,"a":2,"d":3}
-
-    import random
-    for _ in range(10):
-        obs = env.reset()
-        #print(env.action_space)
-        #print(env.observation_space)
-        #print(obs)
-        #print(obs["ltl"])
-        #print(np.array(obs["features"]).shape)
-        #print(obs.count(), len(obs), np.array(obs).shape)
-        #input()
-        for _ in range(10000):
-            env.show()
-            print(obs["ltl"])
-            print("\nAction? ", end="")
-            a = input()
-            while a not in str_to_action:
-                a = input()
-            print()
-            a = str_to_action[a]
-            #a = random.randrange(env.action_space.n)
-            obs, reward, done, info = env.step(a%env.action_space.n)
-
-            if done:
-                env.show()
-                print(reward)
-                print("Done!")
-                input()
-                break
-
-            #print(np.array(obs).shape)
-            #print(obs["ltl"])
-            #print(np.array(obs["features"]).shape)
-            print(reward)
-
-    env.close()
-    exit()
-
-
 if __name__ == '__main__':
-
-    test_env()
     
     agent  = 'ppo'
     env_id = 'Letter-4x4-v0'
