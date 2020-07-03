@@ -11,7 +11,7 @@ from model import ACModel
 
 
 # Run examples:  
-#   - python run_torch_ac.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000
+#   - python run_torch_ac.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000
 
 # Parse arguments
 

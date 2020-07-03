@@ -1,7 +1,7 @@
 import numpy as np
 import gym
 from gym import spaces
-import ltl_progression
+import ltl_progression, random
 #from collections import deque
 #from baselines.common.atari_wrappers import LazyFrames
 
@@ -21,6 +21,7 @@ class LTLEnv(gym.Wrapper):
         """
         super().__init__(env)
         self.observation_space = spaces.Dict({'features': env.observation_space})
+        self.known_progressions = {}
 
     def sample_ltl_goal(self):
         # This function must return an LTL formula for the task
@@ -56,7 +57,9 @@ class LTLEnv(gym.Wrapper):
 
         # progressing the ltl formula
         truth_assignment = self.get_events(self.obs, action, next_obs)
-        self.ltl_goal = ltl_progression.progress(self.ltl_goal, truth_assignment)
+        if (self.ltl_goal, truth_assignment) not in self.known_progressions:
+            self.known_progressions[(self.ltl_goal, truth_assignment)] = ltl_progression.progress_and_clean(self.ltl_goal, truth_assignment)
+        self.ltl_goal = self.known_progressions[(self.ltl_goal, truth_assignment)]
         self.obs      = next_obs
 
         # Computing the LTL reward and done signal
@@ -111,18 +114,16 @@ class LTLLetterEnv(LTLEnv):
               and a set of training formulas
         """
         super().__init__(env)
+        self.propositions = self.env.get_propositions()
 
     def sample_ltl_goal(self):
-        # This function must return an LTL formula for the task
-        # Format:     
-        #(
-        #    'and',
-        #    ('until','True', ('and', 'd', ('until','True',('not','c')))),
-        #    ('until','True', ('and', 'a', ('until','True', ('and', 'b', ('until','True','c')))))
-        #)
         # NOTE: The propositions must be represented by a char
-        return ('until',('not','a'),'b')
-        #return ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
+        # This function must return an LTL formula for the task
+        # We generate random LTL formulas using the following template:
+        #    ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
+        # where p1, p2, p3, and p4 are randomly sampled propositions
+        p = random.sample(self.propositions,4)
+        return ('until',('not',p[0]),('and', p[1], ('until',('not',p[2]),p[3])))
 
     def get_events(self, obs, act, next_obs):
         # This function must return the events that currently hold on the environment

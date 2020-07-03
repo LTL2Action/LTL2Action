@@ -8,10 +8,17 @@
 # git clone https://github.com/lcswillems/rl-starter-files.git
 # cd rl-starter-files
 # pip install -r requirements.txt
+# Install Spot-2.9 (https://spot.lrde.epita.fr/install.html)
+#	- wget http://www.lrde.epita.fr/dload/spot/spot-2.9.tar.gz
+#	- cd spot-2.9
+#	- ./configure --prefix /u/rntoro/
+#	- make
+#	- make install
 
 
 # Loading libraries
 export PATH="/u/rntoro/anaconda3/bin:$PATH"
+export PYTHONPATH=$PYTHONPATH:/u/rntoro/lib/python3.6/site-packages
 
 # Activating environment
 source activate ltl2action-environment

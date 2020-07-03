@@ -117,6 +117,9 @@ class LetterEnv(gym.Env):
             return self.map[self.agent]
         return ""
 
+    def get_propositions(self):
+        return self.letter_types
+
 def _is_valid_map(map, grid_size, actions):
     open_list = [(0,0)]
     closed_list = set()
