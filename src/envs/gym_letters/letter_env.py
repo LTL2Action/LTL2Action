@@ -141,9 +141,18 @@ class LetterEnv4x4(LetterEnv):
         super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=False, timeout=100)
 
 
+class LetterEnvFixedMap4x4(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=True, timeout=100)
+
+
 class LetterEnv7x7(LetterEnv):
     def __init__(self):
         super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=False, timeout=1000)
+
+class LetterEnvFixedMap7x7(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=True, timeout=1000)
 
 # This code allow to play a game (for debugging purposes)
 if __name__ == '__main__':

@@ -54,6 +54,7 @@ class LTLEnv(gym.Wrapper):
         raise NotImplementedError
 
     def reset(self):
+        self.known_progressions = {}
         self.obs = self.env.reset()
 
         # Defining an LTL goal

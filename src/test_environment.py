@@ -10,7 +10,7 @@ import ltl_wrappers
 
 
 def test_env():
-    env = gym.make("Letter-4x4-v0")
+    env = gym.make("Letter-4x4-v1")
     env = ltl_wrappers.LTLLetterEnv(env)
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 

@@ -5,6 +5,9 @@ To run an agent, use the following command:
    >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000
    >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Test --save-interval 10 --procs 4 --frames 1000000000
 This runs PPO over the Letter-4x4-v0 environment. It saves the model *storage/Letter* and runs for 1000000000 frames.
+NOTE:
+    Letter-4x4-v0 -> Standard environment of 4x4
+    Letter-4x4-v1 -> This version uses a fixed map of 4x4
 """
 
 import argparse
