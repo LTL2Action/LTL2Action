@@ -31,6 +31,8 @@ parser.add_argument("--algo", required=True,
                     help="algorithm to use: a2c | ppo (REQUIRED)")
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
+parser.add_argument("--ltl-sampler", default="Default",
+                    help="name of the ltl formula template to sample from (default: DefaultSampler)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
@@ -77,7 +79,7 @@ args = parser.parse_args()
 # Set run dir
 
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = f"{args.env}_{args.algo}_seed{args.seed}_{date}"
+default_model_name = f"{args.env}_{args.ltl_sampler}_{args.algo}_seed{args.seed}_{date}"
 
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
@@ -106,7 +108,7 @@ txt_logger.info(f"Device: {device}\n")
 
 envs = []
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, args.seed + 10000 * i))
+    envs.append(utils.make_env(args.env, args.ltl_sampler, args.seed + 10000 * i))
 txt_logger.info("Environments loaded\n")
 
 # Load training status
