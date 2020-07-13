@@ -2,9 +2,9 @@
 These are simple wrappers that will include LTL goals to any given environment.
 It also progress the formulas as the agent interacts with the envirionment.
 
-However, each environment must implement the followng functions: 
+However, each environment must implement the followng functions:
     - *get_events(...)*: Returns the propositions that currently hold on the environment.
-    - *sample_ltl_goal(...)*: Returns a new (randomly generated) LTL goal for the episode. 
+    - *sample_ltl_goal(...)*: Returns a new (randomly generated) LTL goal for the episode.
 
 Notes about LTLEnv:
     - The episode ends if the LTL goal is progressed to True or False.
@@ -18,6 +18,7 @@ import numpy as np
 import gym
 from gym import spaces
 import ltl_progression, random
+from ltl_samplers import getLTLSampler
 
 
 class LTLEnv(gym.Wrapper):
@@ -28,7 +29,7 @@ class LTLEnv(gym.Wrapper):
         It adds an LTL objective to the current environment
             - The observations become a dictionary with an added "ltl" field
               specifying the LTL objective
-            - It also automatically progress the formula and generates an 
+            - It also automatically progress the formula and generates an
               appropriate reward function
             - However, it does requires the user to define a labeling function
               and a set of training formulas
@@ -39,7 +40,7 @@ class LTLEnv(gym.Wrapper):
 
     def sample_ltl_goal(self):
         # This function must return an LTL formula for the task
-        # Format:     
+        # Format:
         #(
         #    'and',
         #    ('until','True', ('and', 'd', ('until','True',('not','c')))),
@@ -112,22 +113,19 @@ class IgnoreLTLWrapper(gym.Wrapper):
         # executing the action in the environment
         obs, reward, done, info = self.env.step(action)
         obs = obs['features']
-        return obs, reward, done, info 
+        return obs, reward, done, info
 
 
 class LTLLetterEnv(LTLEnv):
-    def __init__(self, env):
+    def __init__(self, env, ltl_sampler=None):
         super().__init__(env)
         self.propositions = self.env.get_propositions()
+        self.sampler = getLTLSampler(ltl_sampler, self.propositions)
 
     def sample_ltl_goal(self):
         # NOTE: The propositions must be represented by a char
         # This function must return an LTL formula for the task
-        # We generate random LTL formulas using the following template:
-        #    ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
-        # where p1, p2, p3, and p4 are randomly sampled propositions
-        p = random.sample(self.propositions,4)
-        return ('until',('not',p[0]),('and', p[1], ('until',('not',p[2]),p[3])))
+        return self.sampler.sample()
 
     def get_events(self, obs, act, next_obs):
         # This function must return the events that currently hold on the environment
