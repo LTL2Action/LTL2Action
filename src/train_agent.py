@@ -8,6 +8,8 @@ This runs PPO over the Letter-4x4-v0 environment. It saves the model *storage/Le
 NOTE:
     Letter-4x4-v0 -> Standard environment of 4x4
     Letter-4x4-v1 -> This version uses a fixed map of 4x4
+To run PPO while ignoring the LTL input, add the "--ignoreLTL" flag:
+   >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000 --ignoreLTL
 """
 
 import argparse
@@ -69,7 +71,8 @@ parser.add_argument("--optim-alpha", type=float, default=0.99,
                     help="RMSprop optimizer alpha (default: 0.99)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
-
+parser.add_argument("--ignoreLTL", action="store_true", default=False,
+                    help="the network ignores the LTL input")
 
 args = parser.parse_args()
 
@@ -126,7 +129,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)

@@ -27,11 +27,11 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, ignoreLTL):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_text = True
+        self.use_text = not ignoreLTL
         self.use_memory = False
 
         # Define image embedding
@@ -49,14 +49,16 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
 
         # Define text embedding
-        self.word_embedding_size = 32
-        self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
-        self.text_embedding_size = 128
-        self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
+        if self.use_text:
+            self.word_embedding_size = 32
+            self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
+            self.text_embedding_size = 128
+            self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        self.embedding_size += self.text_embedding_size
+        if self.use_text:
+            self.embedding_size += self.text_embedding_size
 
         # Define actor's model
         self.actor = nn.Sequential(
@@ -92,8 +94,9 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         embedding = x
 
         # Adding Text
-        embed_text = self._get_embed_text(obs.text)
-        embedding = torch.cat((embedding, embed_text), dim=1)
+        if self.use_text:
+            embed_text = self._get_embed_text(obs.text)
+            embedding = torch.cat((embedding, embed_text), dim=1)
 
         # Actor
         x = self.actor(embedding)
