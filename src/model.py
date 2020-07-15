@@ -46,7 +46,8 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             nn.Conv2d(32, 64, (2, 2)),
             nn.ReLU()
         )
-        self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+        #self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+        self.image_embedding_size = (n-3)*(m-3)*64
 
         # Define text embedding
         if self.use_text:
