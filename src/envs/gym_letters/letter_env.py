@@ -15,7 +15,7 @@ class LetterEnv(gym.Env):
     Note that steping outside the map causes the agent to appear on the other extreme
     """
 
-    def __init__(self, grid_size:int, letters:str, use_fixed_map:float, timeout:int):
+    def __init__(self, grid_size:int, letters:str, use_fixed_map:float, use_agent_centric_view:float, timeout:int):
         """
             grid_size: 
                 - (int) size of the grid
@@ -26,9 +26,11 @@ class LetterEnv(gym.Env):
             timeout:
                 - (int) maximum lenght of the episode  
         """
+        assert not use_agent_centric_view or grid_size%2==1, "Agent-centric view is only available for odd grid-sizes"
         self.grid_size     = grid_size
         self.letters       = letters
         self.use_fixed_map = use_fixed_map
+        self.use_agent_centric_view = use_agent_centric_view
         self.letter_types = list(set(letters))
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=0, high=1, shape=(grid_size,grid_size,len(self.letter_types)+1), dtype=np.uint8)
@@ -59,13 +61,18 @@ class LetterEnv(gym.Env):
     def _get_observation(self):
         obs = np.zeros(shape=(self.grid_size,self.grid_size,len(self.letter_types)+1),dtype=np.uint8)
 
+        # Getting agent-centric view (if needed)
+        c_map, agent = self.map, self.agent
+        if self.use_agent_centric_view:
+            c_map, agent = self._get_centric_map()
+
         # adding objects
-        for loc in self.map:
-            letter_id = self.letter_types.index(self.map[loc])
+        for loc in c_map:
+            letter_id = self.letter_types.index(c_map[loc])
             obs[loc[0],loc[1],letter_id] = 1
 
         # adding agent
-        obs[self.agent[0],self.agent[1],len(self.letter_types)] = 1
+        obs[agent[0],agent[1],len(self.letter_types)] = 1
         return obs
 
     def reset(self):
@@ -97,20 +104,48 @@ class LetterEnv(gym.Env):
 
         return obs
 
+    def _get_centric_map(self):
+        center = self.grid_size//2
+        agent  = (center,center)
+        delta  = center - self.agent[0], center - self.agent[1]
+        c_map  = {}
+        for loc in self.map:
+            new_loc_i = (loc[0] + delta[0] + self.grid_size) % self.grid_size
+            new_loc_j = (loc[1] + delta[1] + self.grid_size) % self.grid_size
+            c_map[(new_loc_i,new_loc_j)] = self.map[loc]
+        return c_map, agent
+
     def show(self):
+        c_map, agent = self.map, self.agent
+        if self.use_agent_centric_view:
+            c_map, agent = self._get_centric_map()
         print("*"*(self.grid_size+2))
         for i in range(self.grid_size):
             line = "*"
             for j in range(self.grid_size):
-                if (i,j) == self.agent:
+                if (i,j) == agent:
                     line += "A"
-                elif (i,j) in self.map:
-                    line += self.map[(i,j)]
+                elif (i,j) in c_map:
+                    line += c_map[(i,j)]
                 else:
                     line += " "
             print(line+"*")
         print("*"*(self.grid_size+2))
         print("Events:", self.get_events(), "\tTimeout:", self.timeout - self.time)
+
+    def show_features(self):
+        obs = self._get_observation()
+        print("*"*(self.grid_size+2))
+        for i in range(self.grid_size):
+            line = "*"
+            for j in range(self.grid_size):
+                if np.amax(obs[i,j,:]) > 0:
+                    line += str(np.argmax(obs[i,j,:]))
+                else:
+                    line += " "
+            print(line+"*")
+        print("*"*(self.grid_size+2))
+
 
     def get_events(self):
         if self.agent in self.map:
@@ -138,38 +173,62 @@ def _is_valid_map(map, grid_size, actions):
 
 class LetterEnv4x4(LetterEnv):
     def __init__(self):
-        super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=False, timeout=100)
+        super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=False, use_agent_centric_view=False, timeout=100)
 
 
 class LetterEnvFixedMap4x4(LetterEnv):
     def __init__(self):
-        super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=True, timeout=100)
+        super().__init__(grid_size=4, letters="aabbcddee", use_fixed_map=True, use_agent_centric_view=False, timeout=100)
+
+
+class LetterEnv5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=False, use_agent_centric_view=False, timeout=150)
+
+
+class LetterEnvFixedMap5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=True, use_agent_centric_view=False, timeout=150)
+
+
+class LetterEnvAgentCentric5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=False, use_agent_centric_view=True, timeout=150)
+
+
+class LetterEnvAgentCentricFixedMap5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=True, use_agent_centric_view=True, timeout=150)
 
 
 class LetterEnv7x7(LetterEnv):
     def __init__(self):
-        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=False, timeout=1000)
+        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=False, use_agent_centric_view=False, timeout=1000)
 
 class LetterEnvFixedMap7x7(LetterEnv):
     def __init__(self):
-        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=True, timeout=1000)
+        super().__init__(grid_size=7, letters="aabbcddee", use_fixed_map=True, use_agent_centric_view=False, timeout=1000)
+
+
 
 # This code allow to play a game (for debugging purposes)
 if __name__ == '__main__':
     # commands
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
-    grid_size = 4
-    letters   = "aabbcddee"
+    grid_size = 5
+    letters   = "aabbccddee"
     use_fixed_map = False
     timeout = 10
+    use_agent_centric_view = False
 
     # play the game!
-    game = LetterEnv(grid_size, letters, use_fixed_map, timeout)
+    game = LetterEnv(grid_size, letters, use_fixed_map, use_agent_centric_view, timeout)
     while True:
         # Episode
         game.reset()
         while True:
             game.show()
+            game.show_features()
             print("\nAction? ", end="")
             a = input()
             print()

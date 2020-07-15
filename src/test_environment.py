@@ -1,6 +1,11 @@
 """
 This code allows to play the environment manually.
 To control the agent, use the WASD keys.
+NOTE:
+    Letter-5x5-v0 -> Standard environment of 5x5 with a timeout of 150 steps
+    Letter-5x5-v1 -> This version uses a fixed map of 5x5 with a timeout of 150 steps
+    Letter-5x5-v2 -> Standard environment of 5x5 using an agent-centric view with a timeout of 150 steps
+    Letter-5x5-v3 -> This version uses a fixed map of 5x5 using an agent-centric view with a timeout of 150 steps
 """
 
 
@@ -10,7 +15,7 @@ import ltl_wrappers
 
 
 def test_env():
-    env = gym.make("Letter-4x4-v1")
+    env = gym.make("Letter-5x5-v2")
     env = ltl_wrappers.LTLLetterEnv(env)
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
