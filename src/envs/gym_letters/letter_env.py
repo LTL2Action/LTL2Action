@@ -17,14 +17,14 @@ class LetterEnv(gym.Env):
 
     def __init__(self, grid_size:int, letters:str, use_fixed_map:float, use_agent_centric_view:float, timeout:int):
         """
-            grid_size: 
+            grid_size:
                 - (int) size of the grid
-            letters:   
+            letters:
                 - (str) letters that the grid will include in random locations (there could be repeated letters)
             use_fixed_map:
                 - (bool) if True, then the map will be fixed for the whole training set
             timeout:
-                - (int) maximum lenght of the episode  
+                - (int) maximum lenght of the episode
         """
         assert not use_agent_centric_view or grid_size%2==1, "Agent-centric view is only available for odd grid-sizes"
         self.grid_size     = grid_size
@@ -75,9 +75,12 @@ class LetterEnv(gym.Env):
         obs[agent[0],agent[1],len(self.letter_types)] = 1
         return obs
 
+    def seed(self, seed=None):
+        if (self.use_fixed_map): random.seed(seed)
+
     def reset(self):
         """
-        This function resets the world and collects the first observation. 
+        This function resets the world and collects the first observation.
         """
         if not self.use_fixed_map:
             self.map = None
@@ -236,7 +239,7 @@ if __name__ == '__main__':
             if a in str_to_action:
                 obs, reward, done, _ = game.step(str_to_action[a])
                 if done:
-                    break 
+                    break
             else:
                 print("Forbidden action")
         game.show()
