@@ -36,9 +36,9 @@ parser.add_argument("--algo", required=True,
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--ltl-sampler", default="Default",
-                    help="name of the ltl formula template to sample from (default: DefaultSampler)")
+                    help="the ltl formula template to sample from (default: DefaultSampler)")
 parser.add_argument("--model", default=None,
-                    help="name of the model (default: {ENV}_{ALGO}_{TIME})")
+                    help="name of the model (default: {ENV}_{SAMPLER}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--log-interval", type=int, default=1,
@@ -49,6 +49,16 @@ parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--frames", type=int, default=10**7,
                     help="number of frames of training (default: 1e7)")
+
+## Evaluation parameters
+parser.add_argument("--eval", action="store_true", default=False,
+                    help="evaluate the saved model (default: False")
+parser.add_argument("--eval-episodes", type=int,  default=5,
+                    help="number of episodes to evaluate on (default: 5)")
+parser.add_argument("--eval-env", default=None,
+                    help="name of the environment to train on (default: use the same \"env\" as training)")
+parser.add_argument("--ltl-sampler-eval", default=None,
+                    help="the ltl formula template to sample from for evaluation (default: use the same \"ltl-sampler\" as training)")
 
 ## Parameters for main algorithm
 parser.add_argument("--epochs", type=int, default=4,
@@ -91,9 +101,9 @@ model_dir = utils.get_model_dir(model_name)
 
 # Load loggers and Tensorboard writer
 
-txt_logger = utils.get_txt_logger(model_dir)
-csv_file, csv_logger = utils.get_csv_logger(model_dir)
-tb_writer = tensorboardX.SummaryWriter(model_dir)
+txt_logger = utils.get_txt_logger(model_dir + "/train")
+csv_file, csv_logger = utils.get_csv_logger(model_dir + "/train")
+tb_writer = tensorboardX.SummaryWriter(model_dir + "/train")
 
 # Log command and all script arguments
 
@@ -157,6 +167,14 @@ if "optimizer_state" in status:
     algo.optimizer.load_state_dict(status["optimizer_state"])
 txt_logger.info("Optimizer loaded\n")
 
+# init the evaluator
+if args.eval:
+    eval_sampler = args.ltl_sampler_eval if args.ltl_sampler_eval else args.ltl_sampler
+    eval_env = args.eval_env if args.eval_env else args.env
+    eval = utils.Eval(eval_env, model_name, eval_sampler,
+                seed=args.seed, device=device, num_procs=args.procs, ignoreLTL=args.ignoreLTL)
+
+
 # Train model
 
 num_frames = status["num_frames"]
@@ -215,5 +233,9 @@ while num_frames < args.frames:
                   "model_state": acmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
         if hasattr(preprocess_obss, "vocab"):
             status["vocab"] = preprocess_obss.vocab.vocab
-        utils.save_status(status, model_dir)
+        utils.save_status(status, model_dir + "/train")
         txt_logger.info("Status saved")
+
+        if args.eval:
+            # we send the num_frames to align the eval curves with the training curves on TB
+            eval.eval(num_frames, episodes=args.eval_episodes)
