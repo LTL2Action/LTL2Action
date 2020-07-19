@@ -32,6 +32,16 @@ register(
 )
 
 register(
+    id='Letter-5x5-v4',
+    entry_point='envs.gym_letters.letter_env:LetterEnvShortAgentCentric5x5'
+)
+
+register(
+    id='Letter-5x5-v5',
+    entry_point='envs.gym_letters.letter_env:LetterEnvShortAgentCentricFixedMap5x5'
+)
+
+register(
     id='Letter-7x7-v0',
     entry_point='envs.gym_letters.letter_env:LetterEnv7x7'
 )

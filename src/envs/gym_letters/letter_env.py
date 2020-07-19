@@ -198,11 +198,17 @@ class LetterEnvAgentCentric5x5(LetterEnv):
     def __init__(self):
         super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=False, use_agent_centric_view=True, timeout=150)
 
+class LetterEnvShortAgentCentric5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=False, use_agent_centric_view=True, timeout=20)
 
 class LetterEnvAgentCentricFixedMap5x5(LetterEnv):
     def __init__(self):
         super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=True, use_agent_centric_view=True, timeout=150)
 
+class LetterEnvShortAgentCentricFixedMap5x5(LetterEnv):
+    def __init__(self):
+        super().__init__(grid_size=5, letters="aabbccddee", use_fixed_map=True, use_agent_centric_view=True, timeout=20)
 
 class LetterEnv7x7(LetterEnv):
     def __init__(self):
