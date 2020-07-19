@@ -6,7 +6,7 @@ import tensorboardX
 import utils
 
 """
-This class evaluates a model on a evaluation dataset generated online
+This class evaluates a model on a validation dataset generated online
 via the sampler (ltl_sampler) that is passed in (model_name). It outputs
 the results for visualization on TensorBoard by creating a folder under
 the same directory as the trained model.
@@ -42,13 +42,13 @@ class Eval:
 
         obss = self.eval_envs.reset()
 
-        log_done_counter = 0
+        log_counter = self.num_procs
         log_episode_return = torch.zeros(self.num_procs, device=self.device)
         log_episode_num_frames = torch.zeros(self.num_procs, device=self.device)
 
         # Initialize logs
         logs = {"num_frames_per_episode": [], "return_per_episode": []}
-        while log_done_counter < episodes:
+        while log_counter < episodes:
             actions = agent.get_actions(obss)
             obss, rewards, dones, _ = self.eval_envs.step(actions)
             agent.analyze_feedbacks(rewards, dones)
@@ -58,7 +58,7 @@ class Eval:
 
             for i, done in enumerate(dones):
                 if done:
-                    log_done_counter += 1
+                    log_counter += 1
                     logs["return_per_episode"].append(log_episode_return[i].item())
                     logs["num_frames_per_episode"].append(log_episode_num_frames[i].item())
 

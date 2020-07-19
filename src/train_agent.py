@@ -52,13 +52,15 @@ parser.add_argument("--frames", type=int, default=10**7,
 
 ## Evaluation parameters
 parser.add_argument("--eval", action="store_true", default=False,
-                    help="evaluate the saved model (default: False")
+                    help="evaluate the saved model (default: False)")
 parser.add_argument("--eval-episodes", type=int,  default=5,
                     help="number of episodes to evaluate on (default: 5)")
 parser.add_argument("--eval-env", default=None,
                     help="name of the environment to train on (default: use the same \"env\" as training)")
 parser.add_argument("--ltl-sampler-eval", default=None,
                     help="the ltl formula template to sample from for evaluation (default: use the same \"ltl-sampler\" as training)")
+parser.add_argument("--eval-procs", type=int, default=1,
+                    help="number of processes (default: use the same \"procs\" as training)")
 
 ## Parameters for main algorithm
 parser.add_argument("--epochs", type=int, default=4,
@@ -171,8 +173,10 @@ txt_logger.info("Optimizer loaded\n")
 if args.eval:
     eval_sampler = args.ltl_sampler_eval if args.ltl_sampler_eval else args.ltl_sampler
     eval_env = args.eval_env if args.eval_env else args.env
+    eval_procs = args.eval_procs if args.eval_procs else args.procs
+
     eval = utils.Eval(eval_env, model_name, eval_sampler,
-                seed=args.seed, device=device, num_procs=args.procs, ignoreLTL=args.ignoreLTL)
+                seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL)
 
 
 # Train model
