@@ -18,8 +18,7 @@ import numpy as np
 import gym
 from gym import spaces
 import ltl_progression, random
-from ltl_samplers import getLTLSampler
-
+from ltl_samplers import getLTLSampler, SequenceSampler
 
 class LTLEnv(gym.Wrapper):
     def __init__(self, env):
@@ -125,7 +124,20 @@ class LTLLetterEnv(LTLEnv):
     def sample_ltl_goal(self):
         # NOTE: The propositions must be represented by a char
         # This function must return an LTL formula for the task
-        return self.sampler.sample()
+        formula = self.sampler.sample()
+
+        if isinstance(self.sampler, SequenceSampler):
+            def flatten(bla):
+                output = []
+                for item in bla:
+                    output += flatten(item) if isinstance(item, tuple) else [item]
+                return output
+
+            length = flatten(formula).count("and") + 1 
+            self.env.timeout = 10 * length
+
+        return formula
+
 
     def get_events(self, obs, act, next_obs):
         # This function must return the events that currently hold on the environment

@@ -44,7 +44,10 @@ class Eval:
 
         obss = self.eval_envs.reset()
 
-        log_counter = self.num_procs
+        # This is only giving unbiased evaluations for n_procs = 1 right now
+        log_counter = 0
+        assert(self.num_procs == 1) 
+
         log_episode_return = torch.zeros(self.num_procs, device=self.device)
         log_episode_num_frames = torch.zeros(self.num_procs, device=self.device)
 
