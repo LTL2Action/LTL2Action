@@ -43,7 +43,6 @@ class SequenceSampler(LTLSampler):
             return ('until','True',seq)
         return ('until','True', ('and', seq[0], self._get_sequence(seq[1:])))
 
-
 # The LTLSampler factory method that instantiates the proper sampler
 # based on the @sampler_id.
 def getLTLSampler(sampler_id, propositions):

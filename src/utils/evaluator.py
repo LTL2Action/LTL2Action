@@ -24,7 +24,7 @@ class Eval:
         self.ignoreLTL = ignoreLTL
 
         self.model_dir = utils.get_model_dir(model_name)
-        self.tb_writer = tensorboardX.SummaryWriter(self.model_dir + "/eval")
+        self.tb_writer = tensorboardX.SummaryWriter(self.model_dir + "/eval-" + ltl_sampler)
 
         # Load environments for evaluation
         eval_envs = []
