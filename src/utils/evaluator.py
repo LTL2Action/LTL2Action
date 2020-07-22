@@ -4,6 +4,8 @@ from torch_ac.utils.penv import ParallelEnv
 import tensorboardX
 
 import utils
+import argparse
+import datetime
 
 """
 This class evaluates a model on a validation dataset generated online
@@ -31,7 +33,7 @@ class Eval:
         self.eval_envs = ParallelEnv(eval_envs)
 
 
-    def eval(self, num_frames, episodes=100):
+    def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
         agent = utils.Agent(self.eval_envs.observation_space, self.eval_envs.action_space, self.model_dir + "/train", self.ignoreLTL,
                             device=self.device, argmax=self.argmax, num_envs=self.num_procs)
@@ -88,4 +90,40 @@ class Eval:
         data += return_per_episode.values()
 
         for field, value in zip(header, data):
+            if stdout:
+                print(field, value)
+            else:
                 self.tb_writer.add_scalar(field, value, num_frames)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", required=True,
+                    help="name of the environment to train on (REQUIRED)")
+    parser.add_argument("--ltl-sampler", default="Default",
+                    help="the ltl formula template to sample from (default: DefaultSampler)")
+    parser.add_argument("--seed", type=int, default=1,
+                    help="random seed (default: 1)")
+    parser.add_argument("--model-name", required=True,
+                    help="name of the model")
+    parser.add_argument("--procs", type=int, default=1,
+                    help="number of processes (default: 1)")
+    parser.add_argument("--ignoreLTL", action="store_true", default=False,
+                    help="the network ignores the LTL input")
+    parser.add_argument("--eval-episodes", type=int,  default=5,
+                    help="number of episodes to evaluate on (default: 5)")
+    args = parser.parse_args()
+
+    eval_env = args.env
+    eval_sampler = args.ltl_sampler
+    model_name = args.model_name # format: "{eval_env}_{eval_sampler}_ppo_seed{args.seed}_{date}"
+    device = "cpu"
+    eval_procs = args.procs
+    ignoreLTL = args.ignoreLTL
+    eval_episodes = args.eval_episodes
+
+
+    eval = utils.Eval(eval_env, model_name, eval_sampler,
+                seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL)
+    eval.eval(-1, episodes=args.eval_episodes, stdout=True)
+
