@@ -40,15 +40,15 @@ class SequenceSampler(LTLSampler):
             c = random.choice(self.propositions)
             if len(seq) == 0 or seq[-1] != c:
                 seq += c
-                
+
         ret = self._get_sequence(seq)
 
         return ret
 
     def _get_sequence(self, seq):
         if len(seq) == 1:
-            return ('until','True',seq)
-        return ('until','True', ('and', seq[0], self._get_sequence(seq[1:])))
+            return ('eventually',seq)
+        return ('eventually',('and', seq[0], self._get_sequence(seq[1:])))
 
 # The LTLSampler factory method that instantiates the proper sampler
 # based on the @sampler_id.
