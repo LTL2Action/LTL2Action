@@ -33,7 +33,14 @@ class SequenceSampler(LTLSampler):
         self.max_len = int(max_len)
 
     def sample(self):
-        seq = "".join(random.sample(self.propositions, random.randint(self.min_len, self.max_len)))
+        length = random.randint(self.min_len, self.max_len)
+        seq = ""
+
+        while len(seq) < length:
+            c = random.choice(self.propositions)
+            if len(seq) == 0 or seq[-1] != c:
+                seq += c
+                
         ret = self._get_sequence(seq)
 
         return ret
