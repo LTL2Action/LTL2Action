@@ -15,8 +15,9 @@ import ltl_wrappers
 
 
 def test_env():
-    env = gym.make("Letter-5x5-v2")
-    env = ltl_wrappers.LTLLetterEnv(env, ltl_sampler="Sequence_2_3")
+    env = gym.make("Letter-7x7-v0")
+    #env = ltl_wrappers.LTLLetterEnv(env, ltl_sampler="Sequence_2_3")
+    env = ltl_wrappers.LTLLetterEnv(env, ltl_sampler="UntilTasks_1_3_1_2")
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
     import random

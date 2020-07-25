@@ -24,6 +24,42 @@ class DefaultSampler(LTLSampler):
         p = random.sample(self.propositions,4)
         return ('until',('not',p[0]),('and', p[1], ('until',('not',p[2]),p[3])))
 
+# This class generates random conjunctions of Until-Tasks.
+# Each until tasks has *n* levels, where each level consists 
+# of avoiding a proposition until reaching another proposition.
+#   E.g.,
+#      Level 1: ('until',('not','a'),'b')
+#      Level 2: ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
+#      etc...
+# The number of until-tasks, their levels, and their propositions are randomly sampled.
+# This code is a generalization of the DefaultSampler---which is equivalent to UntilTaskSampler(propositions, 2, 2, 1, 1)
+class UntilTaskSampler(LTLSampler):
+    def __init__(self, propositions, min_levels=1, max_levels=2, min_conjunctions=1 , max_conjunctions=2):
+        super().__init__(propositions)
+        self.levels       = (int(min_levels), int(max_levels))
+        self.conjunctions = (int(min_conjunctions), int(max_conjunctions))
+        assert 2*int(max_levels)*int(max_conjunctions) <= len(propositions), "The domain does not have enough propositions!"
+        
+    def sample(self):    
+        # Sampling a conjuntion of *n_conjs* (not p[0]) Until (p[1]) formulas of *n_levels* levels
+        n_conjs = random.randint(*self.conjunctions)
+        p = random.sample(self.propositions,2*self.levels[1]*n_conjs)
+        ltl = None
+        b = 0
+        for i in range(n_conjs):
+            n_levels = random.randint(*self.levels)
+            # Sampling an until task of *n_levels* levels
+            until_task = ('until',('not',p[b]),p[b+1])
+            b +=2 
+            for j in range(1,n_levels):
+                until_task = ('until',('not',p[b]),('and', p[b+1], until_task))
+                b +=2 
+            # Adding the until task to the conjunction of formulas that the agent have to solve
+            if ltl is None: ltl = until_task
+            else:           ltl = ('and',until_task,ltl)
+        return ltl
+
+
 # This class generates random LTL formulas that form a sequence of actions.
 # @ min_len, max_len: min/max length of the random sequence to generate.
 class SequenceSampler(LTLSampler):
@@ -59,6 +95,8 @@ def getLTLSampler(sampler_id, propositions):
 
     if (tokens[0] == "Sequence"):
         return SequenceSampler(propositions, tokens[1], tokens[2])
+    elif (tokens[0] == "UntilTasks"):
+        return UntilTaskSampler(propositions, tokens[1], tokens[2], tokens[3], tokens[4])
     else: # "Default"
         return DefaultSampler(propositions)
 

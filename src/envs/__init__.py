@@ -51,3 +51,13 @@ register(
     entry_point='envs.gym_letters.letter_env:LetterEnvFixedMap7x7'
 )
 
+register(
+    id='Letter-7x7-v2',
+    entry_point='envs.gym_letters.letter_env:LetterEnvAgentCentric7x7'
+)
+
+register(
+    id='Letter-7x7-v3',
+    entry_point='envs.gym_letters.letter_env:LetterEnvAgentCentricFixedMap7x7'
+)
+
