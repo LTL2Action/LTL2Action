@@ -27,7 +27,7 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL):
+    def __init__(self, obs_space, action_space, ignoreLTL, use_memory):
         super().__init__()
 
         # Decide which components are enabled
@@ -48,6 +48,10 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         )
         #self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
         self.image_embedding_size = (n-3)*(m-3)*64
+
+        # Define memory
+        if self.use_memory:
+            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
 
         # Define text embedding
         if self.use_text:
@@ -92,7 +96,13 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         x = x.reshape(x.shape[0], -1)
 
         # Image
-        embedding = x
+        if self.use_memory:
+            hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
+            hidden = self.memory_rnn(x, hidden)
+            embedding = hidden[0]
+            memory = torch.cat(hidden, dim=1)
+        else:
+            embedding = x
 
         # Adding Text
         if self.use_text:
