@@ -20,6 +20,8 @@ To run PPO while ignoring the LTL input, add the "--ignoreLTL" flag:
    >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000 --ignoreLTL
 """
 
+# python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2 --ignoreLTLprogression
+
 import argparse
 import time
 import datetime
@@ -95,6 +97,8 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
+parser.add_argument("--ignoreLTLprogression", action="store_true", default=False,
+                    help="the agent always receives the original LTL formula (without LTL progression)")
 
 args = parser.parse_args()
 
@@ -130,8 +134,9 @@ txt_logger.info(f"Device: {device}\n")
 # Load environments
 
 envs = []
+use_progression = not args.ignoreLTLprogression
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, args.ltl_sampler, args.seed))
+    envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed))
 txt_logger.info("Environments loaded\n")
 
 # Load training status
