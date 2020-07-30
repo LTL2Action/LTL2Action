@@ -89,6 +89,8 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
+parser.add_argument("--gnn", action="store_true", default=False,
+                    help="use gnn to model the LTL (only if ignoreLTL==False)")
 
 args = parser.parse_args()
 
@@ -138,14 +140,14 @@ txt_logger.info("Training status loaded\n")
 
 # Load observations preprocessor
 
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)

@@ -15,6 +15,7 @@ import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_ac
 
+from gnns.GCN import *
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
@@ -27,12 +28,13 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL):
+    def __init__(self, obs_space, action_space, ignoreLTL, gnn):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_text = not ignoreLTL
+        self.use_text = not ignoreLTL and not gnn
         self.use_memory = False
+        self.use_gnn = gnn
 
         # Define image embedding
         n = obs_space["image"][0]
@@ -56,9 +58,14 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             self.text_embedding_size = 128
             self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
 
+        if self.use_gnn:
+            hidden_dim = 32
+            self.text_embedding_size = 128
+            self.gnn = GCN(obs_space["text"], self.text_embedding_size, hidden_dims = [hidden_dim, hidden_dim])
+
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        if self.use_text:
+        if self.use_text or self.use_gnn:
             self.embedding_size += self.text_embedding_size
 
         # Define actor's model
@@ -98,6 +105,11 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         if self.use_text:
             embed_text = self._get_embed_text(obs.text)
             embedding = torch.cat((embedding, embed_text), dim=1)
+
+        # Adding GNN
+        if self.use_gnn:
+            embed_gnn = self.gnn(obs.text)
+            embedding = torch.cat((embedding, embed_gnn), dim=1)
 
         # Actor
         x = self.actor(embedding)

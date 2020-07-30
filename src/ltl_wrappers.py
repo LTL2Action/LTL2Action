@@ -61,7 +61,7 @@ class LTLEnv(gym.Wrapper):
         self.ltl_goal = self.sample_ltl_goal()
 
         # Adding the ltl goal to the observation
-        ltl_obs = {'features': self.obs,'ltl': self.ltl_goal}
+        ltl_obs = {'features': self.obs,'text': self.ltl_goal}
 
         return ltl_obs
 
@@ -88,7 +88,7 @@ class LTLEnv(gym.Wrapper):
             ltl_done   = True
 
         # Computing the new observation and returning the outcome of this action
-        ltl_obs = {'features': self.obs,'ltl': self.ltl_goal}
+        ltl_obs = {'features': self.obs,'text': self.ltl_goal}
         reward  = original_reward + ltl_reward
         done    = env_done or ltl_done
         return ltl_obs, reward, done, info
@@ -133,7 +133,7 @@ class LTLLetterEnv(LTLEnv):
                     output += flatten(item) if isinstance(item, tuple) else [item]
                 return output
 
-            length = flatten(formula).count("and") + 1 
+            length = flatten(formula).count("and") + 1
             self.env.timeout = 10 * length
 
         return formula

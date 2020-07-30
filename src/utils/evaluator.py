@@ -16,7 +16,7 @@ the same directory as the trained model.
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
                 seed=0, device="cpu", argmax=False,
-                num_procs=1, ignoreLTL=False):
+                num_procs=1, ignoreLTL=False, gnn=False):
 
         self.device = device
         self.argmax = argmax
@@ -115,6 +115,8 @@ if __name__ == '__main__':
                     help="the network ignores the LTL input")
     parser.add_argument("--eval-episodes", type=int,  default=5,
                     help="number of episodes to evaluate on (default: 5)")
+    parser.add_argument("--gnn", action="store_true", default=True,
+                    help="use gnn to model the LTL (only if ignoreLTL==True)")
     args = parser.parse_args()
 
     eval_env = args.env
@@ -127,6 +129,6 @@ if __name__ == '__main__':
 
 
     eval = utils.Eval(eval_env, model_name, eval_sampler,
-                seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL)
+                seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, gnn=args.gnn)
     eval.eval(-1, episodes=args.eval_episodes, stdout=True)
 
