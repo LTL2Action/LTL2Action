@@ -16,12 +16,14 @@ the same directory as the trained model.
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
                 seed=0, device="cpu", argmax=False,
-                num_procs=1, ignoreLTL=False, gnn=False):
+                num_procs=1, ignoreLTL=False, useProgression=True, useMem=False, gnn=False):
 
         self.device = device
         self.argmax = argmax
         self.num_procs = num_procs
         self.ignoreLTL = ignoreLTL
+        self.useMem = useMem
+        self.gnn = gnn
 
         self.model_dir = utils.get_model_dir(model_name)
         self.tb_writer = tensorboardX.SummaryWriter(self.model_dir + "/eval-" + ltl_sampler)
@@ -29,14 +31,14 @@ class Eval:
         # Load environments for evaluation
         eval_envs = []
         for i in range(self.num_procs):
-            eval_envs.append(utils.make_env(env, ltl_sampler, seed))
+            eval_envs.append(utils.make_env(env, useProgression, ltl_sampler, seed))
         self.eval_envs = ParallelEnv(eval_envs)
 
 
     def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
-        agent = utils.Agent(self.eval_envs.observation_space, self.eval_envs.action_space, self.model_dir + "/train", self.ignoreLTL,
-                            device=self.device, argmax=self.argmax, num_envs=self.num_procs)
+        agent = utils.Agent(self.eval_envs.observation_space, self.eval_envs.action_space, self.model_dir + "/train", self.ignoreLTL, self.useMem,
+                            gnn=self.gnn, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
         # Run agent
@@ -46,7 +48,7 @@ class Eval:
 
         # This is only giving unbiased evaluations for n_procs = 1 right now
         log_counter = 0
-        assert(self.num_procs == 1) 
+        assert(self.num_procs == 1)
 
         log_episode_return = torch.zeros(self.num_procs, device=self.device)
         log_episode_num_frames = torch.zeros(self.num_procs, device=self.device)

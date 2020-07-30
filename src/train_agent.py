@@ -2,16 +2,28 @@
 This code trains an RL agent that receives the LTL formula as input.
 It is a simple adaptation of this repo: https://github.com/lcswillems/rl-starter-files
 To run an agent, use the following command:
-   >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000
-   >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Test --save-interval 10 --procs 4 --frames 1000000000
+   >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Letter --save-interval 10 --frames 1000000000
+   >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2
 This runs PPO over the Letter-4x4-v0 environment. It saves the model *storage/Letter* and runs for 1000000000 frames.
 NOTE:
     Letter-5x5-v0 -> Standard environment of 5x5 with a timeout of 150 steps
     Letter-5x5-v1 -> This version uses a fixed map of 5x5 with a timeout of 150 steps
     Letter-5x5-v2 -> Standard environment of 5x5 using an agent-centric view with a timeout of 150 steps
     Letter-5x5-v3 -> This version uses a fixed map of 5x5 using an agent-centric view with a timeout of 150 steps
+
+    Letter-7x7-v0 -> Standard environment of 7x7 with a timeout of 500 steps
+    Letter-7x7-v1 -> This version uses a fixed map of 7x7 with a timeout of 500 steps
+    Letter-7x7-v2 -> Standard environment of 7x7 using an agent-centric view with a timeout of 500 steps
+    Letter-7x7-v3 -> This version uses a fixed map of 7x7 using an agent-centric view with a timeout of 500 steps
+
+BASELINES
+==============
 To run PPO while ignoring the LTL input, add the "--ignoreLTL" flag:
    >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000 --ignoreLTL
+To run PPO without progressing the LTL formula, add the "ignoreLTLprogression" flag:
+    >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2 --ignoreLTLprogression
+To run PPO without progressing the LTL formula, but learn an LSTM policy use *--recurrence X*, where X > 1 (I think X=4 is a reasonable value) 
+    >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2 --ignoreLTLprogression --recurrence 4
 """
 
 import argparse
@@ -89,11 +101,16 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
+parser.add_argument("--ignoreLTLprogression", action="store_true", default=False,
+                    help="the agent always receives the original LTL formula (without LTL progression)")
+parser.add_argument("--recurrence", type=int, default=1,
+                    help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", action="store_true", default=False,
                     help="use gnn to model the LTL (only if ignoreLTL==False)")
 
 args = parser.parse_args()
 
+args.mem = args.recurrence > 1
 
 # Set run dir
 
@@ -126,8 +143,9 @@ txt_logger.info(f"Device: {device}\n")
 # Load environments
 
 envs = []
+use_progression = not args.ignoreLTLprogression
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, args.ltl_sampler, args.seed))
+    envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed))
 txt_logger.info("Environments loaded\n")
 
 # Load training status
@@ -147,7 +165,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)
@@ -155,14 +173,13 @@ txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(acmodel))
 
 # Load algo
-recurrence = 1
 if args.algo == "a2c":
     algo = torch_ac.A2CAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, recurrence,
+                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_alpha, args.optim_eps, preprocess_obss)
 elif args.algo == "ppo":
     algo = torch_ac.PPOAlgo(envs, acmodel, device, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, recurrence,
+                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, preprocess_obss)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
@@ -180,7 +197,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn))
 
 
 # Train model

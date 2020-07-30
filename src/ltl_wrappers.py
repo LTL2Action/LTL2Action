@@ -21,7 +21,7 @@ import ltl_progression, random
 from ltl_samplers import getLTLSampler, SequenceSampler
 
 class LTLEnv(gym.Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, use_progression=True):
         """
         LTL environment
         --------------------
@@ -32,8 +32,12 @@ class LTLEnv(gym.Wrapper):
               appropriate reward function
             - However, it does requires the user to define a labeling function
               and a set of training formulas
+        use_progression:
+            - When true, the agent gets the progressed LTL formula as part of the observation
+            - When False, the agent gets the original LTL formula as part of the observation
         """
         super().__init__(env)
+        self.use_progression   = use_progression
         self.observation_space = spaces.Dict({'features': env.observation_space})
         self.known_progressions = {}
 
@@ -58,7 +62,8 @@ class LTLEnv(gym.Wrapper):
         self.obs = self.env.reset()
 
         # Defining an LTL goal
-        self.ltl_goal = self.sample_ltl_goal()
+        self.ltl_goal     = self.sample_ltl_goal()
+        self.ltl_original = self.ltl_goal
 
         # Adding the ltl goal to the observation
         ltl_obs = {'features': self.obs,'text': self.ltl_goal}
@@ -88,7 +93,10 @@ class LTLEnv(gym.Wrapper):
             ltl_done   = True
 
         # Computing the new observation and returning the outcome of this action
-        ltl_obs = {'features': self.obs,'text': self.ltl_goal}
+        if self.use_progression:
+            ltl_obs = {'features': self.obs,'text': self.ltl_goal}
+        else:
+            ltl_obs = {'features': self.obs,'text': self.ltl_original}
         reward  = original_reward + ltl_reward
         done    = env_done or ltl_done
         return ltl_obs, reward, done, info
@@ -116,8 +124,8 @@ class IgnoreLTLWrapper(gym.Wrapper):
 
 
 class LTLLetterEnv(LTLEnv):
-    def __init__(self, env, ltl_sampler=None):
-        super().__init__(env)
+    def __init__(self, env, use_progression=True, ltl_sampler=None):
+        super().__init__(env, use_progression)
         self.propositions = self.env.get_propositions()
         self.sampler = getLTLSampler(ltl_sampler, self.propositions)
 
