@@ -27,9 +27,4 @@ class GCN(nn.Module):
 
         # Calculate graph representation by averaging all the node representations.
         hg = dgl.mean_nodes(g, 'h')
-        embed =  self.g_embed(hg).squeeze(1)
-
-        self.inc+=1
-        print(self.inc)
-
-        return embed
+        return self.g_embed(hg).squeeze(1)
