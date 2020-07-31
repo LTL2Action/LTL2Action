@@ -85,9 +85,7 @@ def preprocess4gnn(texts, vocab, vocab_space, device=None):
     This function receives the LTL formulas and convert them into inputs for a GNN
     """
     propositions = vocab_space["tokens"]
-    ret = np.array([[to_graph(text, vocab, propositions)] for text in texts])
-    # print(ret)
-    return ret
+    return np.array([[to_graph(text, vocab, propositions)] for text in texts])
 
 def to_graph(formula, vocab, propositions):
     PARENT, SIBLING  = "par_child", "sibling"
