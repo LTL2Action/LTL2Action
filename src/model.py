@@ -65,7 +65,7 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         if self.use_gnn:
             hidden_dim = 32
             self.text_embedding_size = 128
-            self.gnn = GCN(obs_space["text"], self.text_embedding_size, hidden_dims = [hidden_dim, hidden_dim])
+            self.gnn = GCN(obs_space["text"], self.text_embedding_size, hidden_dims = [hidden_dim, hidden_dim]).to(self.device)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
