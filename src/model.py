@@ -35,6 +35,7 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         self.use_text = not ignoreLTL and not gnn
         self.use_memory = False
         self.use_gnn = gnn
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Define image embedding
         n = obs_space["image"][0]
