@@ -142,7 +142,7 @@ class LTLLetterEnv(LTLEnv):
                 return output
 
             length = flatten(formula).count("and") + 1
-            self.env.timeout = 10 * length
+            self.env.timeout = 25 # 10 * length
 
         return formula
 
