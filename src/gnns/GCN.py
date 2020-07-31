@@ -18,7 +18,7 @@ class GCN(nn.Module):
     def forward(self, g):
         g = np.array(g).reshape((1, -1)).tolist()[0]
         g = dgl.batch(g)
-        h = g.ndata["feat"]
+        h = g.ndata["feat"].float()
         for i in range(self.num_layers):
             h = F.relu(self.convs[i](g, h))
         g.ndata['h'] = h
