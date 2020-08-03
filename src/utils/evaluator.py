@@ -32,13 +32,15 @@ class Eval:
         eval_envs = []
         for i in range(self.num_procs):
             eval_envs.append(utils.make_env(env, useProgression, ltl_sampler, seed))
+        self.vocab_space = eval_envs[0].get_propositions()
         self.eval_envs = ParallelEnv(eval_envs)
 
 
     def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
-        agent = utils.Agent(self.eval_envs.observation_space, self.eval_envs.action_space, self.model_dir + "/train", self.ignoreLTL, self.useMem,
-                            gnn=self.gnn, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
+        
+        agent = utils.Agent(self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train", 
+                self.ignoreLTL, self.useMem, gnn=self.gnn, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
         # Run agent
