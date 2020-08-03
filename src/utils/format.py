@@ -10,9 +10,6 @@ import torch
 import torch_ac
 import gym
 import numpy as np
-import dgl
-import networkx as nx
-from sklearn.preprocessing import OneHotEncoder
 
 import utils
 
@@ -33,10 +30,11 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn):
         vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
         vocab = Vocabulary(vocab_space)
+        tree_builder = utils.ASTBuilder(vocab_space["tokens"])
         def preprocess_obss(obss, device=None):
             return torch_ac.DictList({
                 "image": preprocess_images([obs["features"] for obs in obss], device=device),
-                "text":  preprocess_texts([obs["text"] for obs in obss], vocab, vocab_space, gnn=gnn, device=device)
+                "text":  preprocess_texts([obs["text"] for obs in obss], vocab, vocab_space, gnn=gnn, device=device, ast=tree_builder)
             })
         preprocess_obss.vocab = vocab
 
@@ -52,9 +50,9 @@ def preprocess_images(images, device=None):
     return torch.tensor(images, device=device, dtype=torch.float)
 
 
-def preprocess_texts(texts, vocab, vocab_space, gnn=False, device=None):
+def preprocess_texts(texts, vocab, vocab_space, gnn=False, device=None, **kwargs):
     if (gnn):
-        return preprocess4gnn(texts, vocab, vocab_space, device)
+        return preprocess4gnn(texts, kwargs["ast"], device)
 
     return preprocess4rnn(texts, vocab, device)
 
@@ -80,61 +78,11 @@ def preprocess4rnn(texts, vocab, device=None):
 
     return torch.tensor(indexed_texts, device=device, dtype=torch.long)
 
-def preprocess4gnn(texts, vocab, vocab_space, device=None):
+def preprocess4gnn(texts, ast, device=None):
     """
     This function receives the LTL formulas and convert them into inputs for a GNN
     """
-    propositions = vocab_space["tokens"]
-    return np.array([[to_graph(text, vocab, propositions).to(device)] for text in texts])
-
-def to_graph(formula, vocab, propositions):
-    PARENT, SIBLING  = "par_child", "sibling"
-    # A helper function that recursively builds up the AST of the LTL formula
-    def to_graph_(nxg, formula, node_id):
-        head = formula[0]
-        rest = formula[1:]
-
-        if head in ["next", "until", "and", "or"]:
-            nxg.add_node(node_id, feat=vocab.one_hot(head), type=head)
-
-            id_l = to_graph_(nxg, rest[0], node_id + 1)
-            nxg.add_edge(node_id + 1, node_id, type=PARENT)
-            id_r = to_graph_(nxg, rest[1], id_l + 1)
-            nxg.add_edge(id_l + 1, node_id, type=PARENT)
-
-            return id_r
-
-        if head in ["eventually", "always", "not"]:
-            nxg.add_node(node_id, feat=vocab.one_hot(head), type=head)
-
-            id_c = to_graph_(nxg, rest[0], node_id + 1)
-            nxg.add_edge(node_id + 1, node_id, type=PARENT)
-
-            return id_c
-
-        if formula in ["True", "False"]:
-            nxg.add_node(node_id, feat=vocab.one_hot(formula), type=formula)
-
-            return node_id
-
-        if formula in propositions:
-            nxg.add_node(node_id, feat=vocab.one_hot(formula.replace("'",'')), type=formula)
-
-            return node_id
-
-
-        assert False, "Format error in to_graph_()"
-
-        return None
-
-    nxg = nx.DiGraph()
-    to_graph_(nxg, formula, 0)
-
-    # concert the Networkx graph to dgl graph and pass the 'feat' attribute
-    g = dgl.DGLGraph()
-    g.from_networkx(nxg, node_attrs=["feat"]) #edge_attrs=["type"]
-
-    return g
+    return np.array([[ast(text).to(device)] for text in texts])
 
 
 class Vocabulary:
@@ -147,22 +95,6 @@ class Vocabulary:
         # # populate the vocab with the LTL operators
         # for item in ['next', 'until', 'and', 'or', 'eventually', 'always', 'not']:
         #     self.__getitem__(item)
-
-        self.one_hot = self.make_encoders(vocab_space["tokens"])
-
-    """ This function prepares the encoder that for te propositions.
-        For now we only support 1-hot but others (positional?) encoders can be added to this.
-    """
-    def make_encoders(self, propositions):
-        terminals = ['True', 'False'] + propositions
-        enc = OneHotEncoder(handle_unknown='ignore', dtype=np.int)
-        enc.fit([['next'], ['until'], ['and'], ['or'], ['eventually'],
-            ['always'], ['not']] + np.array(terminals).reshape((-1, 1)).tolist())
-
-        def _one_hot(token):
-            return enc.transform([[token]])[0][0].toarray()
-
-        return _one_hot
 
     def load_vocab(self, vocab):
         self.vocab = vocab
