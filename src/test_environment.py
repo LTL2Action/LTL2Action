@@ -25,7 +25,7 @@ def test_env():
         obs = env.reset()
         for _ in range(10000):
             env.show()
-            print(obs["ltl"])
+            print(obs["text"])
             print("\nAction? ", end="")
             a = input()
             while a not in str_to_action:
