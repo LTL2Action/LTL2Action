@@ -24,6 +24,7 @@ class Eval:
         self.ignoreLTL = ignoreLTL
         self.useMem = useMem
         self.gnn = gnn
+        self.gnn_layers = gnn_layers
 
         self.model_dir = utils.get_model_dir(model_name)
         self.tb_writer = tensorboardX.SummaryWriter(self.model_dir + "/eval-" + ltl_sampler)
