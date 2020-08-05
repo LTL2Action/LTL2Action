@@ -107,7 +107,8 @@ parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", action="store_true", default=False,
                     help="use gnn to model the LTL (only if ignoreLTL==False)")
-
+parser.add_argument("--gnn-layers", type=int, default=4,
+                    help="the number of times the GNN hidden state is propagated")
 args = parser.parse_args()
 
 args.mem = args.recurrence > 1
@@ -165,7 +166,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn, args.gnn_layers)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)
@@ -197,7 +198,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn, gnn_layers=args.gnn_layers))
 
 
 # Train model
