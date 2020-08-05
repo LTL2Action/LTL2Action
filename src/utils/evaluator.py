@@ -16,7 +16,7 @@ the same directory as the trained model.
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
                 seed=0, device="cpu", argmax=False,
-                num_procs=1, ignoreLTL=False, useProgression=True, useMem=False, gnn=False):
+                num_procs=1, ignoreLTL=False, useProgression=True, useMem=False, gnn=None):
 
         self.device = device
         self.argmax = argmax
@@ -38,8 +38,8 @@ class Eval:
 
     def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
-        
-        agent = utils.Agent(self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train", 
+
+        agent = utils.Agent(self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train",
                 self.ignoreLTL, self.useMem, gnn=self.gnn, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
@@ -119,8 +119,7 @@ if __name__ == '__main__':
                     help="the network ignores the LTL input")
     parser.add_argument("--eval-episodes", type=int,  default=5,
                     help="number of episodes to evaluate on (default: 5)")
-    parser.add_argument("--gnn", action="store_true", default=True,
-                    help="use gnn to model the LTL (only if ignoreLTL==True)")
+    parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
     args = parser.parse_args()
 
     eval_env = args.env

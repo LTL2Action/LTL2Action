@@ -15,7 +15,8 @@ import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_ac
 
-from gnns.GCN import *
+from gnns.graphs.GCN import *
+from gnns.graphs.GNN import GNNMaker
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
@@ -28,13 +29,13 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn):
+    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn_type):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_text = not ignoreLTL and not gnn
+        self.use_text = not ignoreLTL and not gnn_type
         self.use_memory = False
-        self.use_gnn = gnn
+        self.gnn_type = gnn_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Define image embedding
@@ -63,14 +64,16 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             self.text_embedding_size = 128
             self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
 
-        if self.use_gnn:
+        if self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 128
-            self.gnn = GCNRoot(obs_space["text"], self.text_embedding_size, hidden_dim = hidden_dim, num_layers = 4).to(self.device)
+            self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size).to(self.device)
+            print("Here", self.gnn)
+            # self.gnn_type = GCNRoot(obs_space["text"], self.text_embedding_size, hidden_dim = hidden_dim, num_layers = 4).to(self.device)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        if self.use_text or self.use_gnn:
+        if self.use_text or self.gnn_type:
             self.embedding_size += self.text_embedding_size
 
         # Define actor's model
@@ -118,7 +121,7 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
             embedding = torch.cat((embedding, embed_text), dim=1)
 
         # Adding GNN
-        if self.use_gnn:
+        if self.gnn_type:
             embed_gnn = self.gnn(obs.text)
             embedding = torch.cat((embedding, embed_gnn), dim=1)
 

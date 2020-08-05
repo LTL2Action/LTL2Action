@@ -22,7 +22,7 @@ To run PPO while ignoring the LTL input, add the "--ignoreLTL" flag:
    >>> python train_agent.py --algo ppo --env Letter-4x4-v0 --model Letter --save-interval 10 --frames 1000000000 --ignoreLTL
 To run PPO without progressing the LTL formula, add the "ignoreLTLprogression" flag:
     >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2 --ignoreLTLprogression
-To run PPO without progressing the LTL formula, but learn an LSTM policy use *--recurrence X*, where X > 1 (I think X=4 is a reasonable value) 
+To run PPO without progressing the LTL formula, but learn an LSTM policy use *--recurrence X*, where X > 1 (I think X=4 is a reasonable value)
     >>> python train_agent.py --algo ppo --env Letter-7x7-v2 --model Test --save-interval 10 --procs 4 --frames 1000000000 --ltl-sampler UntilTasks_1_3_1_2 --ignoreLTLprogression --recurrence 4
 """
 
@@ -105,8 +105,7 @@ parser.add_argument("--ignoreLTLprogression", action="store_true", default=False
                     help="the agent always receives the original LTL formula (without LTL progression)")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
-parser.add_argument("--gnn", action="store_true", default=False,
-                    help="use gnn to model the LTL (only if ignoreLTL==False)")
+parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
 
 args = parser.parse_args()
 
@@ -158,7 +157,7 @@ txt_logger.info("Training status loaded\n")
 
 # Load observations preprocessor
 
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded")
