@@ -26,7 +26,7 @@ class LTLEnv(gym.Wrapper):
         LTL environment
         --------------------
         It adds an LTL objective to the current environment
-            - The observations become a dictionary with an added "ltl" field
+            - The observations become a dictionary with an added "text" field
               specifying the LTL objective
             - It also automatically progress the formula and generates an
               appropriate reward function

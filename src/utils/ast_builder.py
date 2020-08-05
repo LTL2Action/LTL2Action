@@ -56,6 +56,7 @@ class ASTBuilder(object):
 
         if head in ["next", "until", "and", "or"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
+            nxg.add_edge(0, 0)
 
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
@@ -72,6 +73,7 @@ class ASTBuilder(object):
 
         if head in ["eventually", "always", "not"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
+            nxg.add_edge(0, 0)
 
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
@@ -82,11 +84,13 @@ class ASTBuilder(object):
 
         if formula in ["True", "False"]:
             nxg.add_node(0, feat=self.vocab._one_hot(formula), token=formula)
+            nxg.add_edge(0, 0)
 
             return nxg
 
         if formula in self.props:
             nxg.add_node(0, feat=self._one_hot(formula.replace("'",'')), token=formula)
+            nxg.add_edge(0, 0)
 
             return nxg
 
@@ -94,6 +98,18 @@ class ASTBuilder(object):
         assert False, "Format error in ast_builder.ASTBuilder._to_graph()"
 
         return None
+
+
+def draw(G):
+    from networkx.drawing.nx_agraph import graphviz_layout
+    import matplotlib.pyplot as plt
+
+
+    plt.title('LTL Tree (no self-loops)')
+    pos=graphviz_layout(G, prog='dot')
+    labels = nx.get_node_attributes(G,'token')
+    nx.draw(G, pos, with_labels=True, arrows=True, labels=labels, node_shape='s', node_size=500, node_color="white")
+    plt.show()
 
 """
 A simple test to check if the ASTBuilder works fine. We do a preorder DFS traversal of the resulting
@@ -114,11 +130,14 @@ if __name__ == '__main__':
         sampler = getLTLSampler(sampler_id, props)
         builder = ASTBuilder(list(set(list(props))))
         formula = sampler.sample()
-        tree = builder(formula, library="networkx").to_undirected()
+        tree = builder(formula, library="networkx")
         pre = list(nx.dfs_preorder_nodes(tree, source=0))
 
+        u_tree = tree.to_undirected()
+        pre = list(nx.dfs_preorder_nodes(u_tree, source=0))
+
         original = re.sub('[,\')(]', '', str(formula))
-        observed = " ".join([tree.nodes[i]["token"] for i in pre])
+        observed = " ".join([u_tree.nodes[i]["token"] for i in pre])
 
         assert original == observed, f"Test Faield: Expected: {original}, Got: {observed}"
 
