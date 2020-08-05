@@ -15,9 +15,9 @@ import ltl_wrappers
 
 
 def test_env():
-    env = gym.make("Letter-7x7-v0")
+    env = gym.make("Letter-7x7-v2")
     #env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="Sequence_2_3")
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression=False, ltl_sampler="UntilTasks_1_3_1_2")
+    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="UntilTasks_2_2_1_1")
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
     import random
@@ -25,7 +25,7 @@ def test_env():
         obs = env.reset()
         for _ in range(10000):
             env.show()
-            print(obs["ltl"])
+            print(obs["text"])
             print("\nAction? ", end="")
             a = input()
             while a not in str_to_action:
