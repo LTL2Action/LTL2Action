@@ -46,8 +46,7 @@ class GCNRoot(GCN):
             h = self.convs[i](g, h)
         g.ndata['h'] = h
 
-        gs = dgl.unbatch(g)
-        hg = torch.cat([gi.ndata['h'][0] for gi in gs])
+        hg = dgl.sum_nodes(g, 'h', weight='is_root')
         return self.g_embed(hg).squeeze(1)
 
 
@@ -74,6 +73,5 @@ class GCNRootShared(GNN):
             h = self.conv(g, h)
         g.ndata['h'] = h
 
-        gs = dgl.unbatch(g)
-        hg = torch.cat([gi.ndata['h'][0] for gi in gs])
+        hg = dgl.sum_nodes(g, 'h', weight='is_root')
         return self.g_embed(hg).squeeze(1)

@@ -27,14 +27,16 @@ class ASTBuilder(object):
     def __ring_key__(self):
         return "ASTBuilder"
 
+    @ring.lru(maxsize=256)
     def __call__(self, formula, library="dgl"):
         nxg = self._to_graph(formula)
-
+        nx.set_node_attributes(nxg, 0., "is_root")
+        nxg.nodes[0]["is_root"] = 1.
         if (library == "networkx"): return nxg
 
         # convert the Networkx graph to dgl graph and pass the 'feat' attribute
         g = dgl.DGLGraph()
-        g.from_networkx(nxg, node_attrs=["feat"]) # dgl does not support string attributes (i.e., token)
+        g.from_networkx(nxg, node_attrs=["feat", "is_root"]) # dgl does not support string attributes (i.e., token)
         return g
 
     def _one_hot(self, token):
@@ -47,7 +49,7 @@ class ASTBuilder(object):
         return nx.relabel_nodes(g, mapping)
 
     # A helper function that recursively builds up the AST of the LTL formula
-    @ring.lru(maxsize=128) # Caching the formula->tree pairs in a Last Recently Used fashion
+    #@ring.lru(maxsize=128) # Caching the formula->tree pairs in a Last Recently Used fashion
     def _to_graph(self, formula):
         head = formula[0]
         rest = formula[1:]
