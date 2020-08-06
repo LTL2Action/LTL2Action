@@ -25,7 +25,7 @@ class GCN(GNN):
         g = dgl.batch(g)
         h = g.ndata["feat"].float()
         for i in range(self.num_layers):
-            h = F.relu(self.convs[i](g, h))
+            h = self.convs[i](g, h)
         g.ndata['h'] = h
 
         # Calculate graph representation by averaging all the hidden node representations.
@@ -43,7 +43,7 @@ class GCNRoot(GCN):
         g = dgl.batch(g)
         h = g.ndata["feat"].float()
         for i in range(self.num_layers):
-            h = F.relu(self.convs[i](g, h))
+            h = self.convs[i](g, h)
         g.ndata['h'] = h
 
         gs = dgl.unbatch(g)
@@ -59,7 +59,7 @@ class GCNRootShared(GNN):
 
         self.num_layers = num_layers
         self.linear_in = nn.Linear(input_dim, hidden_dim)
-        self.conv = GraphConv(hidden_dim, hidden_dim)
+        self.conv = GraphConv(hidden_dim, hidden_dim, activation=F.relu)
         self.g_embed = nn.Linear(hidden_dim, output_dim)
 
     # Uses the base implementation which averages hidden representations of all nodes
@@ -71,7 +71,7 @@ class GCNRootShared(GNN):
 
         # Apply convolution layers
         for i in range(self.num_layers):
-            h = F.relu(self.conv(g, h))
+            h = self.conv(g, h)
         g.ndata['h'] = h
 
         gs = dgl.unbatch(g)
