@@ -164,7 +164,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn, args.gnn_layers)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)
@@ -196,7 +196,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn, gnn_layers=args.gnn_layers))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn))
 
 
 # Train model
