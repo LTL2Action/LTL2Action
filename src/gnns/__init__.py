@@ -7,6 +7,6 @@ register(id="GCN_32_MEAN", entry_point="gnns.graphs.GCN.GCN", hidden_dims=[32])
 
 register(id="GCN_32_32_ROOT", entry_point="gnns.graphs.GCN.GCNRoot", hidden_dims=[32])
 
-register(id="GCN_32_ROOT_SHARED", entry_point="gnns.graphs.GCN.GCNRootShared", hidden_dim=32, num_layers=2)
+register(id="GCN_32_ROOT_SHARED_2", entry_point="gnns.graphs.GCN.GCNRootShared", hidden_dim=32, num_layers=2)
 
-
+register(id="GCN_32_ROOT_SHARED_4", entry_point="gnns.graphs.GCN.GCNRootShared", hidden_dim=32, num_layers=4)
