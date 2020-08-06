@@ -35,7 +35,6 @@ class ASTBuilder(object):
         # convert the Networkx graph to dgl graph and pass the 'feat' attribute
         g = dgl.DGLGraph()
         g.from_networkx(nxg, node_attrs=["feat"]) # dgl does not support string attributes (i.e., token)
-        g.add_edges(g.nodes(), g.nodes())
         return g
 
     def _one_hot(self, token):
