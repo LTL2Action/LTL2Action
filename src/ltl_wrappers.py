@@ -21,7 +21,7 @@ import ltl_progression, random
 from ltl_samplers import getLTLSampler, SequenceSampler
 
 class LTLEnv(gym.Wrapper):
-    def __init__(self, env, use_progression=True):
+    def __init__(self, env, use_progression=True, intrinsic=0.0):
         """
         LTL environment
         --------------------
@@ -40,6 +40,8 @@ class LTLEnv(gym.Wrapper):
         self.use_progression   = use_progression
         self.observation_space = spaces.Dict({'features': env.observation_space})
         self.known_progressions = {}
+        self.intrinsic = intrinsic
+        assert self.intrinsic * env.timeout < 1, "The intrinsic reward or the episod timeout is too high!"
 
     def sample_ltl_goal(self):
         # This function must return an LTL formula for the task
@@ -67,11 +69,11 @@ class LTLEnv(gym.Wrapper):
 
         # Adding the ltl goal to the observation
         ltl_obs = {'features': self.obs,'text': self.ltl_goal}
-
         return ltl_obs
 
 
     def step(self, action):
+        int_reward = 0
         # executing the action in the environment
         next_obs, original_reward, env_done, info = self.env.step(action)
 
@@ -79,6 +81,10 @@ class LTLEnv(gym.Wrapper):
         truth_assignment = self.get_events(self.obs, action, next_obs)
         if (self.ltl_goal, truth_assignment) not in self.known_progressions:
             self.known_progressions[(self.ltl_goal, truth_assignment)] = ltl_progression.progress_and_clean(self.ltl_goal, truth_assignment)
+
+        if (self.ltl_goal != self.known_progressions[(self.ltl_goal, truth_assignment)]):
+            int_reward = self.intrinsic
+
         self.ltl_goal = self.known_progressions[(self.ltl_goal, truth_assignment)]
         self.obs      = next_obs
 
@@ -88,9 +94,11 @@ class LTLEnv(gym.Wrapper):
         if self.ltl_goal == 'True':
             ltl_reward = 1.0
             ltl_done   = True
-        if self.ltl_goal == 'False':
+        elif self.ltl_goal == 'False':
             ltl_reward = -1.0
             ltl_done   = True
+        else:
+            ltl_reward = int_reward
 
         # Computing the new observation and returning the outcome of this action
         if self.use_progression:
@@ -124,8 +132,8 @@ class IgnoreLTLWrapper(gym.Wrapper):
 
 
 class LTLLetterEnv(LTLEnv):
-    def __init__(self, env, use_progression=True, ltl_sampler=None):
-        super().__init__(env, use_progression)
+    def __init__(self, env, use_progression=True, ltl_sampler=None, intrinsic=0.0):
+        super().__init__(env, use_progression, intrinsic)
         self.propositions = self.env.get_propositions()
         self.sampler = getLTLSampler(ltl_sampler, self.propositions)
 
