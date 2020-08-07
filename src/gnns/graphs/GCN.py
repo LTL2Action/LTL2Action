@@ -10,9 +10,9 @@ from gnns.graphs.GNN import GNN
 
 class GCN(GNN):
     def __init__(self, input_dim, output_dim, **kwargs):
-        hidden_dims = kwargs.get('hidden_dims', [32])
         super().__init__(input_dim, output_dim)
 
+        hidden_dims = kwargs.get('hidden_dims', [32])
         self.num_layers = len(hidden_dims)
         self.convs = nn.ModuleList([GraphConv(in_dim, out_dim, activation=F.relu) for (in_dim, out_dim)
                       in zip([input_dim] + hidden_dims[:-1], hidden_dims)])

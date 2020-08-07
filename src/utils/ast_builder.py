@@ -15,8 +15,8 @@ class ASTBuilder(object):
         super(ASTBuilder, self).__init__()
 
         self.props = propositions
-        self.OP_1  = "op_1"
-        self.OP_2  = "op_2"
+        self.REGULAR_EDGE  = 0
+        self.ASSYM_EDGE    = 1
 
         terminals = ['True', 'False'] + self.props
         self._enc = OneHotEncoder(handle_unknown='ignore', dtype=np.int)
@@ -36,7 +36,7 @@ class ASTBuilder(object):
 
         # convert the Networkx graph to dgl graph and pass the 'feat' attribute
         g = dgl.DGLGraph()
-        g.from_networkx(nxg, node_attrs=["feat", "is_root"]) # dgl does not support string attributes (i.e., token)
+        g.from_networkx(nxg, node_attrs=["feat", "is_root"], edge_attrs=["type"]) # dgl does not support string attributes (i.e., token)
         return g
 
     def _one_hot(self, token):
@@ -57,41 +57,43 @@ class ASTBuilder(object):
 
         if head in ["next", "until", "and", "or"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
-            nxg.add_edge(0, 0)
+            nxg.add_edge(0, 0, type=self.REGULAR_EDGE)
 
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self.OP_1) # connect the current node to the root of the left subtree
+            nxg.add_edge(1, 0, type=self.REGULAR_EDGE) # connect the current node to the root of the left subtree
 
             index = nxg.number_of_nodes()
             r = self._to_graph(rest[1]) # build the left subtree
             r = self._shift_ids(r, index)
             nxg = nx.compose(nxg, r) # combine the left subtree with the current tree
-            nxg.add_edge(index, 0, type=self.OP_2)
+            nxg.add_edge(index, 0, type=self.REGULAR_EDGE)
+            if head in ["next", "until"]:
+                nxg.add_edge(1, index, type=self.ASSYM_EDGE) # impose order on the operands of an assymetric operator
 
             return nxg
 
         if head in ["eventually", "always", "not"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
-            nxg.add_edge(0, 0)
+            nxg.add_edge(0, 0, type=self.REGULAR_EDGE)
 
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self.OP_1) # connect the current node to the root of the left subtree
+            nxg.add_edge(1, 0, type=self.REGULAR_EDGE) # connect the current node to the root of the left subtree
 
             return nxg
 
         if formula in ["True", "False"]:
             nxg.add_node(0, feat=self.vocab._one_hot(formula), token=formula)
-            nxg.add_edge(0, 0)
+            nxg.add_edge(0, 0, type=self.REGULAR_EDGE)
 
             return nxg
 
         if formula in self.props:
             nxg.add_node(0, feat=self._one_hot(formula.replace("'",'')), token=formula)
-            nxg.add_edge(0, 0)
+            nxg.add_edge(0, 0, type=self.REGULAR_EDGE)
 
             return nxg
 
@@ -101,15 +103,17 @@ class ASTBuilder(object):
         return None
 
 
-def draw(G):
+def draw(G, formula):
     from networkx.drawing.nx_agraph import graphviz_layout
     import matplotlib.pyplot as plt
 
+    colors = ["black", "red"]
+    edge_color = [colors[i] for i in nx.get_edge_attributes(G,'type').values()]
 
-    plt.title('LTL Tree (no self-loops)')
+    plt.title(formula)
     pos=graphviz_layout(G, prog='dot')
     labels = nx.get_node_attributes(G,'token')
-    nx.draw(G, pos, with_labels=True, arrows=True, labels=labels, node_shape='s', node_size=500, node_color="white")
+    nx.draw(G, pos, with_labels=True, arrows=True, labels=labels, node_shape='s', edgelist=list(nx.get_edge_attributes(G,'type')), edge_color=edge_color, node_size=500, node_color="white")
     plt.show()
 
 """
