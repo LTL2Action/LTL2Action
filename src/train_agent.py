@@ -33,6 +33,7 @@ import torch
 import torch_ac
 import tensorboardX
 import sys
+from math import floor
 
 import utils
 from model import ACModel
@@ -106,6 +107,7 @@ parser.add_argument("--ignoreLTLprogression", action="store_true", default=False
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
+parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
 
 args = parser.parse_args()
 
@@ -144,7 +146,7 @@ txt_logger.info(f"Device: {device}\n")
 envs = []
 use_progression = not args.ignoreLTLprogression
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed))
+    envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed, args.int_reward))
 txt_logger.info("Environments loaded\n")
 
 # Load training status
@@ -222,7 +224,9 @@ while num_frames < args.frames:
     if update % args.log_interval == 0:
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = int(time.time() - start_time)
-        return_per_episode = utils.synthesize(logs["return_per_episode"])
+
+        floored_reward = [floor(i) for i in logs["return_per_episode"]]
+        return_per_episode = utils.synthesize(floored_reward)#logs["return_per_episode"])
         rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
