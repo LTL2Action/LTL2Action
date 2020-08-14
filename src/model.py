@@ -29,13 +29,14 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn_type):
+    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn_type, append_h0):
         super().__init__()
 
         # Decide which components are enabled
         self.use_text = not ignoreLTL and not gnn_type
         self.use_memory = False
         self.gnn_type = gnn_type
+        self.append_h0 = append_h0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Define image embedding
@@ -67,7 +68,7 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         if self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 128
-            self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size).to(self.device)
+            self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size

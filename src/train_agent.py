@@ -108,6 +108,8 @@ parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
+parser.add_argument("--append-h0", action="store_true", default=False,
+                    help="append the original h_0 for each convolution of the GNN")
 
 args = parser.parse_args()
 
@@ -166,7 +168,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn, args.append_h0)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)
