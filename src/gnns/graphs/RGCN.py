@@ -8,13 +8,15 @@ from dgl.nn.pytorch.conv import RelGraphConv
 
 from gnns.graphs.GNN import GNN
 
+from utils.ast_builder import edge_types
+
 class RGCN(GNN):
     def __init__(self, input_dim, output_dim, **kwargs):
         super().__init__(input_dim, output_dim)
 
         hidden_dims = kwargs.get('hidden_dims', [32])
         self.num_layers = len(hidden_dims)
-        self.convs = nn.ModuleList([RelGraphConv(in_dim, out_dim, 2, activation=F.relu)
+        self.convs = nn.ModuleList([RelGraphConv(in_dim, out_dim, len(edge_types), activation=F.relu)
             for (in_dim, out_dim) in zip([input_dim] + hidden_dims[:-1], hidden_dims)])
 
         self.g_embed = nn.Linear(hidden_dims[-1], output_dim)
