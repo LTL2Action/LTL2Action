@@ -36,11 +36,7 @@ class RGCN(GNN):
         etypes = g.edata["type"].float()
         for i in range(self.num_layers):
             if self.append_h0 and i != 0:
-<<<<<<< HEAD
-                h = self.convs[i](g, torch.cat(h, h_0, dim=1), etypes)
-=======
                 h = self.convs[i](g, torch.cat([h, h_0], dim=1), etypes)
->>>>>>> 3fa5fd32b6b65d0455250dd3d60ae841aa8babed
             else:
                 h = self.convs[i](g, h, etypes)
         g.ndata['h'] = h
@@ -52,11 +48,7 @@ class RGCN(GNN):
 
 class RGCNRoot(RGCN):
     def __init__(self, input_dim, output_dim, append_h0, **kwargs):
-<<<<<<< HEAD
-        super().__init__(input_dim, output_dim, **kwargs)
-=======
         super().__init__(input_dim, output_dim, append_h0, **kwargs)
->>>>>>> 3fa5fd32b6b65d0455250dd3d60ae841aa8babed
 
     def forward(self, g):
         g = np.array(g).reshape((1, -1)).tolist()[0]
@@ -66,14 +58,10 @@ class RGCNRoot(RGCN):
         h = h_0
         etypes = g.edata["type"]
         for i in range(self.num_layers):
-<<<<<<< HEAD
-            h = self.convs[i](g, torch.cat(h, h_0, dim=1), etypes)
-=======
             if self.append_h0 and i != 0:
                 h = self.convs[i](g, torch.cat([h, h_0], dim=1), etypes)
             else:
                 h = self.convs[i](g, h, etypes)
->>>>>>> 3fa5fd32b6b65d0455250dd3d60ae841aa8babed
         g.ndata['h'] = h # TODO (Pashootan): Check if this is redundant
         hg = dgl.sum_nodes(g, 'h', weight='is_root')
         return self.g_embed(hg).squeeze(1)

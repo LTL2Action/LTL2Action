@@ -118,7 +118,8 @@ args.mem = args.recurrence > 1
 # Set run dir
 
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = f"{args.gnn if args.gnn else "rnn"}_{args.ltl_sampler}_seed-{args.seed}_{date}"
+gnn_name = args.gnn if args.gnn else "rnn"
+default_model_name = f"{gnn_name}_{args.ltl_sampler}_seed-{args.seed}_{date}"
 
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
