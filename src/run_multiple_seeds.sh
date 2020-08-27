@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --array=1-3
-#SBATCH --mem-per-cpu=12G
+#SBATCH --mem-per-cpu=2G
 #SBATCH --cpus-per-task=16
 #SBATCH --partition cpu
 
