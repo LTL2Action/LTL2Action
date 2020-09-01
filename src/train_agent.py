@@ -54,14 +54,14 @@ parser.add_argument("--model", default=None,
                     help="name of the model (default: {ENV}_{SAMPLER}_{ALGO}_{TIME})")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-parser.add_argument("--log-interval", type=int, default=1,
-                    help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=10,
+parser.add_argument("--log-interval", type=int, default=10,
+                    help="number of updates between two logs (default: 10)")
+parser.add_argument("--save-interval", type=int, default=100,
                     help="number of updates between two saves (default: 10, 0 means no saving)")
 parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
-parser.add_argument("--frames", type=int, default=10**7,
-                    help="number of frames of training (default: 1e7)")
+parser.add_argument("--frames", type=int, default=2*10**8,
+                    help="number of frames of training (default: 2*10e8)")
 
 ## Evaluation parameters
 parser.add_argument("--eval", action="store_true", default=False,
