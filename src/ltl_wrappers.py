@@ -41,7 +41,6 @@ class LTLEnv(gym.Wrapper):
         self.observation_space = spaces.Dict({'features': env.observation_space})
         self.known_progressions = {}
         self.intrinsic = intrinsic
-        assert self.intrinsic * env.timeout < 1, "The intrinsic reward or the episod timeout is too high!"
 
     def sample_ltl_goal(self):
         # This function must return an LTL formula for the task
@@ -80,10 +79,11 @@ class LTLEnv(gym.Wrapper):
         # progressing the ltl formula
         truth_assignment = self.get_events(self.obs, action, next_obs)
         if (self.ltl_goal, truth_assignment) not in self.known_progressions:
-            self.known_progressions[(self.ltl_goal, truth_assignment)] = ltl_progression.progress_and_clean(self.ltl_goal, truth_assignment)
+            result_ltl = ltl_progression.progress_and_clean(self.ltl_goal, truth_assignment)
+            if not result_ltl in self.known_progressions.values():
+                int_reward = self.intrinsic
 
-        if (self.ltl_goal != self.known_progressions[(self.ltl_goal, truth_assignment)]):
-            int_reward = self.intrinsic
+            self.known_progressions[(self.ltl_goal, truth_assignment)] = result_ltl
 
         self.ltl_goal = self.known_progressions[(self.ltl_goal, truth_assignment)]
         self.obs      = next_obs
