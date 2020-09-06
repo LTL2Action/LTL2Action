@@ -46,8 +46,48 @@ def test_env():
 
     env.close()
 
+def test_simple_ltl_env():
+    env = gym.make("Simple-LTL-Env-v0")
+    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="UntilTasks_2_2_1_1")
 
+    letter_types = env.propositions
+
+    def valid_action(a):
+        for prop in list(a):
+            if prop not in letter_types:
+                return False
+        return True
+
+    def transform_action(a):
+        transformed_a = [0] * len(letter_types)
+        for prop in list(a):
+            transformed_a[letter_types.index(prop)] = 1
+        return transformed_a
+
+    for _ in range(10):
+        obs = env.reset()
+        for _ in range(10000):
+            env.show()
+            print(obs["text"])
+            print("\nAction? ", end="")
+            a = input().strip()
+            while not valid_action(a):
+                a = input().strip()
+            a = transform_action(a)
+
+            obs, reward, done, info = env.step(a)
+
+            if done:
+                env.show()
+                print(reward)
+                print("Done!")
+                input()
+                break
+
+            print(reward)
+
+    env.close()
 
 if __name__ == '__main__':
 
-    test_env()
+    test_simple_ltl_env()

@@ -25,7 +25,8 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn):
             })
 
     # Check if it is a MiniGrid observation space
-    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"]:
+    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], spaces.Box):
+        print("MINIGRID ENV")
         obs_space = {"image": obs_space.spaces["features"].shape, "text": len(vocab_space) + 9}
         vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
@@ -38,6 +39,20 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn):
             })
         preprocess_obss.vocab = vocab
 
+    # Check if it's a simple LTL observation space
+    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], spaces.Discrete):
+        print("SIMPLE-LTL ENV")
+
+        obs_space = {"text": len(vocab_space) + 9}
+        vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
+
+        vocab = Vocabulary(vocab_space)
+        tree_builder = utils.ASTBuilder(vocab_space["tokens"])
+        def preprocess_obss(obss, device=None):
+            return torch_ac.DictList({
+                "text":  preprocess_texts([obs["text"] for obs in obss], vocab, vocab_space, gnn=gnn, device=device, ast=tree_builder)
+            })
+        preprocess_obss.vocab = vocab
     else:
         raise ValueError("Unknown observation space: " + str(obs_space))
 
