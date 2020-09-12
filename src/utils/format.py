@@ -25,7 +25,7 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn):
             })
 
     # Check if it is a MiniGrid observation space
-    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], spaces.Box):
+    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], gym.spaces.Box):
         print("MINIGRID ENV")
         obs_space = {"image": obs_space.spaces["features"].shape, "text": len(vocab_space) + 9}
         vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
@@ -40,7 +40,7 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn):
         preprocess_obss.vocab = vocab
 
     # Check if it's a simple LTL observation space
-    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], spaces.Discrete):
+    elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], gym.spaces.Discrete):
         print("SIMPLE-LTL ENV")
 
         obs_space = {"text": len(vocab_space) + 9}

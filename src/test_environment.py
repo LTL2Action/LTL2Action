@@ -53,16 +53,7 @@ def test_simple_ltl_env():
     letter_types = env.propositions
 
     def valid_action(a):
-        for prop in list(a):
-            if prop not in letter_types:
-                return False
-        return True
-
-    def transform_action(a):
-        transformed_a = [0] * len(letter_types)
-        for prop in list(a):
-            transformed_a[letter_types.index(prop)] = 1
-        return transformed_a
+        return a in letter_types
 
     for _ in range(10):
         obs = env.reset()
@@ -73,7 +64,7 @@ def test_simple_ltl_env():
             a = input().strip()
             while not valid_action(a):
                 a = input().strip()
-            a = transform_action(a)
+            a = letter_types.index(a)
 
             obs, reward, done, info = env.step(a)
 

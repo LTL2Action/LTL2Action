@@ -14,12 +14,12 @@ class SimpleLTLEnv(gym.Env):
         """
         self.letters       = letters
         self.letter_types = list(set(letters))
-        self.action_space = spaces.MultiBinary(len(self.letter_types))
+        self.action_space = spaces.Discrete(len(self.letter_types))
         self.observation_space = spaces.Discrete(1)
         self.num_episodes = 0
         self.time = 0
         self.timeout = timeout
-        self.proposition_vals = [0] * len(self.letter_types)
+        self.proposition = None
 
     def step(self, action):
         """
@@ -29,7 +29,7 @@ class SimpleLTLEnv(gym.Env):
         reward = 0.0
         done = self.time > self.timeout
         obs = self._get_observation()
-        self.proposition_vals = action
+        self.proposition = action
 
         return obs, reward, done, {}
 
@@ -50,11 +50,7 @@ class SimpleLTLEnv(gym.Env):
         print("Events:", self.get_events(), "\tTimeout:", self.timeout - self.time)
 
     def get_events(self):
-        events = ""
-        for i in range(len(self.letter_types)):
-            if self.proposition_vals[i] == 1:
-                events = events + self.letter_types[i]
-        return events
+        return self.letter_types[self.proposition] if self.proposition != None else None
 
     def get_propositions(self):
         return self.letter_types

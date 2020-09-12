@@ -169,7 +169,7 @@ txt_logger.info("Observations preprocessor loaded")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.mem, args.gnn, args.append_h0)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 acmodel.to(device)

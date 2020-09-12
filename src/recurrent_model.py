@@ -28,12 +28,13 @@ def init_params(m):
             m.bias.data.fill_(0)
 
 
-class ACModel(nn.Module, torch_ac.ACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0):
+class ACModel(nn.Module, torch_ac.RecurrentACModel):
+    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn_type, append_h0):
         super().__init__()
 
         # Decide which components are enabled
         self.use_text = not ignoreLTL and not gnn_type
+        self.use_memory = False
         self.gnn_type = gnn_type
         self.append_h0 = append_h0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,6 +58,10 @@ class ACModel(nn.Module, torch_ac.ACModel):
         else:
             self.image_embedding_size = 0
 
+        # Define memory
+        if self.use_memory:
+            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
+
         # Define text embedding
         if self.use_text:
             self.word_embedding_size = 32
@@ -70,7 +75,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
 
         # Resize image embedding
-        self.embedding_size = self.image_embedding_size
+        self.embedding_size = self.semi_memory_size
         if self.use_text or self.gnn_type:
             self.embedding_size += self.text_embedding_size
 
@@ -91,24 +96,40 @@ class ACModel(nn.Module, torch_ac.ACModel):
         # Initialize parameters correctly
         self.apply(init_params)
 
-    def forward(self, obs):
+    @property
+    def memory_size(self):
+        return 2*self.semi_memory_size
+
+    @property
+    def semi_memory_size(self):
+        return self.image_embedding_size
+
+    def forward(self, obs, memory):
         embedding = None 
 
         if "image" in obs.keys():
             x = obs.image.transpose(1, 3).transpose(2, 3)
             x = self.image_conv(x)
             x = x.reshape(x.shape[0], -1)
-            embedding = x
+
+            # Image
+            if self.use_memory:
+                hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
+                hidden = self.memory_rnn(x, hidden)
+                embedding = hidden[0]
+                memory = torch.cat(hidden, dim=1)
+            else:
+                embedding = x
 
         # Adding Text
         if self.use_text:
             embed_text = self._get_embed_text(obs.text)
-            embedding = torch.cat((embedding, embed_text), dim=1) if embedding is not None else embed_text
+            embedding = torch.cat((embedding, embed_text), dim=1) if embedding != None else embed_text
 
         # Adding GNN
         if self.gnn_type:
             embed_gnn = self.gnn(obs.text)
-            embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding is not None else embed_gnn
+            embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding != None else embed_gnn
 
         # Actor
         x = self.actor(embedding)
@@ -118,7 +139,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         x = self.critic(embedding)
         value = x.squeeze(1)
 
-        return dist, value
+        return dist, value, memory
 
     def _get_embed_text(self, text):
         _, hidden = self.text_rnn(self.word_embedding(text))
