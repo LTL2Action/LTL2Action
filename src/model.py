@@ -39,6 +39,8 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_space = action_space
 
+        self.freeze_pretrained_params = True
+
         # Define image embedding
         if "image" in obs_space.keys():
             n = obs_space["image"][0]
@@ -123,3 +125,22 @@ class ACModel(nn.Module, torch_ac.ACModel):
     def _get_embed_text(self, text):
         _, hidden = self.text_rnn(self.word_embedding(text))
         return hidden[-1]
+
+    def load_pretrained_rnn(self, model_state):
+
+        # We delete all keys relating to the actor/critic.
+        # We only wish to load the `word_embedding` and `text_rnn` parameters in new_model_state.
+        new_model_state = model_state.copy() 
+
+        for key in model_state.keys():
+            if key.find("actor") != -1 or key.find("critic") != -1:
+                del new_model_state[key]
+
+        self.load_state_dict(new_model_state, strict=False)
+
+        if self.freeze_pretrained_params:
+            for param in self.text_rnn.parameters():
+                param.requires_grad = False
+
+
+

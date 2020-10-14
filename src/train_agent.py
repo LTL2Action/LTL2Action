@@ -110,6 +110,7 @@ parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only 
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
 parser.add_argument("--append-h0", action="store_true", default=False,
                     help="append the original h_0 for each convolution of the GNN")
+parser.add_argument("--pretrained_rnn", default=None,help="name of the model to be pre-loaded")
 
 args = parser.parse_args()
 
@@ -123,6 +124,10 @@ default_model_name = f"{gnn_name}_{args.ltl_sampler}_seed-{args.seed}_{date}"
 
 model_name = args.model or default_model_name
 model_dir = utils.get_model_dir(model_name)
+
+pretrained_rnn_dir = None
+if args.pretrained_rnn:
+    pretrained_rnn_dir = utils.get_model_dir(args.pretrained_rnn)
 
 # Load loggers and Tensorboard writer
 
@@ -160,18 +165,29 @@ except OSError:
     status = {"num_frames": 0, "update": 0}
 txt_logger.info("Training status loaded\n")
 
+if args.pretrained_rnn:
+    try:
+        pretrained_status = utils.get_status(pretrained_rnn_dir)
+    except:
+        txt_logger.info("Failed to load pretrained RNN.\n")
+        exit(1)
+
 # Load observations preprocessor
 
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
-txt_logger.info("Observations preprocessor loaded")
+txt_logger.info("Observations preprocessor loaded\n")
 
 # Load model
 
 acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
+
+if args.pretrained_rnn:
+    acmodel.load_pretrained_rnn(pretrained_status["model_state"])
+    txt_logger.info("Pretrained RNN loaded\n")
 acmodel.to(device)
 txt_logger.info("Model loaded\n")
 txt_logger.info("{}\n".format(acmodel))
