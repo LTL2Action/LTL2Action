@@ -29,7 +29,7 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.ACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0):
+    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0, dumb_ac):
         super().__init__()
 
         # Decide which components are enabled
@@ -38,6 +38,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.append_h0 = append_h0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_space = action_space
+        self.dumb_ac = dumb_ac
 
         self.freeze_pretrained_params = True
 
@@ -63,7 +64,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         if self.use_text:
             self.word_embedding_size = 32
             self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
-            self.text_embedding_size = 128
+            self.text_embedding_size = 32
             self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
 
         if self.gnn_type:
@@ -76,19 +77,30 @@ class ACModel(nn.Module, torch_ac.ACModel):
         if self.use_text or self.gnn_type:
             self.embedding_size += self.text_embedding_size
 
-        # Define actor's model
-        self.actor = nn.Sequential(
-            nn.Linear(self.embedding_size, 64),
-            nn.Tanh(),
-            nn.Linear(64, self.action_space.n)
-        )
+        if self.dumb_ac:
+            # Define actor's model
+            self.actor = nn.Sequential(
+                nn.Linear(self.embedding_size, self.action_space.n)
+            )
 
-        # Define critic's model
-        self.critic = nn.Sequential(
-            nn.Linear(self.embedding_size, 64),
-            nn.Tanh(),
-            nn.Linear(64, 1)
-        )
+            # Define critic's model
+            self.critic = nn.Sequential(
+                nn.Linear(self.embedding_size, 1)
+            )
+        else:
+            # Define actor's model
+            self.actor = nn.Sequential(
+                nn.Linear(self.embedding_size, 64),
+                nn.Tanh(),
+                nn.Linear(64, self.action_space.n)
+            )
+
+            # Define critic's model
+            self.critic = nn.Sequential(
+                nn.Linear(self.embedding_size, 64),
+                nn.Tanh(),
+                nn.Linear(64, 1)
+            )
 
         # Initialize parameters correctly
         self.apply(init_params)

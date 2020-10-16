@@ -110,7 +110,8 @@ parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only 
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
 parser.add_argument("--append-h0", action="store_true", default=False,
                     help="append the original h_0 for each convolution of the GNN")
-parser.add_argument("--pretrained_rnn", default=None,help="name of the model to be pre-loaded")
+parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
+parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
 
 args = parser.parse_args()
 
@@ -181,7 +182,7 @@ txt_logger.info("Observations preprocessor loaded\n")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0, args.dumb_ac)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
 
