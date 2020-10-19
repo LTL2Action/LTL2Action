@@ -62,6 +62,7 @@ parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--frames", type=int, default=2*10**8,
                     help="number of frames of training (default: 2*10e8)")
+parser.add_argument("--checkpoint-dir", default=None)
 
 ## Evaluation parameters
 parser.add_argument("--eval", action="store_true", default=False,
@@ -84,7 +85,7 @@ parser.add_argument("--frames-per-proc", type=int, default=None,
                     help="number of frames per process before update (default: 5 for A2C and 128 for PPO)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--lr", type=float, default=0.001,
+parser.add_argument("--lr", type=float, default=0.0003,
                     help="learning rate (default: 0.001)")
 parser.add_argument("--gae-lambda", type=float, default=0.95,
                     help="lambda coefficient in GAE formula (default: 0.95, 1 means no gae)")
@@ -120,11 +121,20 @@ args.mem = args.recurrence > 1
 # Set run dir
 
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+
 gnn_name = args.gnn if args.gnn else "rnn"
-default_model_name = f"{gnn_name}_{args.ltl_sampler}_seed-{args.seed}_{date}"
+if args.append_h0:
+    gnn_name = gnn_name + "-append_h0"
+if args.dumb_ac:
+    gnn_name = gnn_name + "-dumb_ac"
+if args.pretrained_rnn is not None:
+    gnn_name = gnn_name + "-pretrained"
+
+default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}"
 
 model_name = args.model or default_model_name
-model_dir = utils.get_model_dir(model_name)
+storage_dir = "storage" if args.checkpoint_dir is None else args.checkpoint_dir
+model_dir = utils.get_model_dir(model_name, storage_dir)
 
 pretrained_rnn_dir = None
 if args.pretrained_rnn:
@@ -161,10 +171,10 @@ txt_logger.info("Environments loaded\n")
 # Load training status
 
 try:
-    status = utils.get_status(model_dir)
+    status = utils.get_status(model_dir + "/train")
 except OSError:
     status = {"num_frames": 0, "update": 0}
-txt_logger.info("Training status loaded\n")
+txt_logger.info("Training status loaded.\n")
 
 if args.pretrained_rnn:
     try:
@@ -178,19 +188,20 @@ if args.pretrained_rnn:
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
-txt_logger.info("Observations preprocessor loaded\n")
+txt_logger.info("Observations preprocessor loaded.\n")
 
 # Load model
 
 acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0, args.dumb_ac)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
+    txt_logger.info("Loading model from existing run.\n")
 
 if args.pretrained_rnn:
     acmodel.load_pretrained_rnn(pretrained_status["model_state"])
-    txt_logger.info("Pretrained RNN loaded\n")
+    txt_logger.info("Pretrained RNN loaded.\n")
 acmodel.to(device)
-txt_logger.info("Model loaded\n")
+txt_logger.info("Model loaded.\n")
 txt_logger.info("{}\n".format(acmodel))
 
 # Load algo
@@ -207,7 +218,8 @@ else:
 
 if "optimizer_state" in status:
     algo.optimizer.load_state_dict(status["optimizer_state"])
-txt_logger.info("Optimizer loaded\n")
+    txt_logger.info("Loading optimizer from existing run.\n")
+txt_logger.info("Optimizer loaded.\n")
 
 # init the evaluator
 if args.eval:

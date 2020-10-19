@@ -19,8 +19,8 @@ def get_storage_dir():
     return "storage"
 
 
-def get_model_dir(model_name):
-    return os.path.join(get_storage_dir(), model_name)
+def get_model_dir(model_name, storage_dir="storage"):
+    return os.path.join(storage_dir, model_name)
 
 
 def get_status_path(model_dir):
