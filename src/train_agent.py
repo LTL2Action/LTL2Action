@@ -86,7 +86,7 @@ parser.add_argument("--frames-per-proc", type=int, default=None,
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--lr", type=float, default=0.0003,
-                    help="learning rate (default: 0.001)")
+                    help="learning rate (default: 0.0003)")
 parser.add_argument("--gae-lambda", type=float, default=0.95,
                     help="lambda coefficient in GAE formula (default: 0.95, 1 means no gae)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,

@@ -28,7 +28,7 @@ class ASTBuilder(object):
     def __ring_key__(self):
         return "ASTBuilder"
 
-    @ring.lru(maxsize=256)
+    @ring.lru(maxsize=30000)
     def __call__(self, formula, library="dgl"):
         nxg = self._to_graph(formula)
         nx.set_node_attributes(nxg, 0., "is_root")
@@ -60,7 +60,7 @@ class ASTBuilder(object):
         return edge_types[operator]
 
     # A helper function that recursively builds up the AST of the LTL formula
-    #@ring.lru(maxsize=128) # Caching the formula->tree pairs in a Last Recently Used fashion
+    @ring.lru(maxsize=60000) # Caching the formula->tree pairs in a Last Recently Used fashion
     def _to_graph(self, formula):
         head = formula[0]
         rest = formula[1:]
