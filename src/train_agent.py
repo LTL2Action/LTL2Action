@@ -166,6 +166,12 @@ envs = []
 use_progression = not args.ignoreLTLprogression
 for i in range(args.procs):
     envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed, args.int_reward))
+
+# Sync environments
+envs[0].reset()
+for env in envs:
+    env.env.map = envs[0].env.map
+
 txt_logger.info("Environments loaded\n")
 
 # Load training status
