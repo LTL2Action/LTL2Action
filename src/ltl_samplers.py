@@ -25,7 +25,8 @@ class SuperSampler(LTLSampler):
     def sample(self):
         return random.choice(self.reg_samplers).sample()
 
-
+# This class samples formulas of form (or, op_1, op_2), where op_1 and 2 can be either specified as samplers_ids
+# or by default they will be sampled at random via SuperSampler.
 class OrSampler(LTLSampler):
     def __init__(self, propositions, sampler_ids = ["SuperSampler"]*2):
         super().__init__(propositions)
@@ -120,7 +121,7 @@ def getLTLSampler(sampler_id, propositions):
     # Don't change the order of ifs here otherwise the OR sampler will fail
     if (tokens[0] == "OrSampler"):
         return OrSampler(propositions)
-    elif ("_OR_" in sampler_id):
+    elif ("_OR_" in sampler_id): # e.g., Sequence_2_4_OR_UntilTask_3_3_1_1
         sampler_ids = sampler_id.split("_OR_")
         return OrSampler(propositions, sampler_ids)
     elif (tokens[0] == "Sequence"):
