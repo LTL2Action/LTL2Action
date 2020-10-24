@@ -1,6 +1,8 @@
 """
 This code allows to play the environment manually.
-To control the agent, use the WASD keys.
+We support two environments: 1. Simple-LTL-Env-v0 (Default): The LTL formula is the env and actions are the propositions. The goal is to progress the formula ot True.
+                             2. Letter_envs of different sizes along with the goal specified in LTL. To control the agent, use the WASD keys.
+
 NOTE:
     Letter-5x5-v0 -> Standard environment of 5x5 with a timeout of 150 steps
     Letter-5x5-v1 -> This version uses a fixed map of 5x5 with a timeout of 150 steps
@@ -9,15 +11,17 @@ NOTE:
 """
 
 
+import argparse
+
 import gym
 import envs.gym_letters
 import ltl_wrappers
 
 
-def test_env():
-    env = gym.make("Letter-7x7-v2")
+def test_env(env, sampler):
+    env = gym.make(env)
     #env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="Sequence_2_3")
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="UntilTasks_2_2_1_1")
+    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler=sampler)
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
     import random
@@ -46,9 +50,9 @@ def test_env():
 
     env.close()
 
-def test_simple_ltl_env():
-    env = gym.make("Simple-LTL-Env-v0")
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="UntilTasks_2_2_1_1")
+def test_simple_ltl_env(env, sampler):
+    env = gym.make(env)
+    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler=sampler)
 
     letter_types = env.propositions
 
@@ -80,5 +84,12 @@ def test_simple_ltl_env():
     env.close()
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", default="Simple-LTL-Env-v0",
+                    help="name of the environment to train on (default: Simple-LTL-Env-v0)")
+    parser.add_argument("--ltl-sampler", default="UntilTasks_2_2_1_1",
+                    help="the ltl formula template to sample from (default: UntilTasks_2_2_1_1)")
+    args = parser.parse_args()
 
-    test_simple_ltl_env()
+
+    test_simple_ltl_env(args.env, args.ltl_sampler)
