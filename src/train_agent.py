@@ -113,6 +113,7 @@ parser.add_argument("--append-h0", action="store_true", default=False,
                     help="append the original h_0 for each convolution of the GNN")
 parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
+parser.add_argument("--unfreeze-ltl", action="store_true", default=False,help="Un-freeze the gradient updates of the LTL module")
 
 args = parser.parse_args()
 
@@ -129,6 +130,8 @@ if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
 if args.pretrained_rnn is not None:
     gnn_name = gnn_name + "-pretrained"
+if args.unfreeze_ltl:
+    gnn_name = gnn_name + "-unfreeze_ltl"
 
 default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}"
 
@@ -236,7 +239,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, useMem=args.mem, gnn=args.gnn))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, gnn=args.gnn, append_h0 = args.append_h0, dumb_ac = args.dumb_ac))
 
 
 # Train model
@@ -296,7 +299,7 @@ while num_frames < args.frames:
 
     if args.save_interval > 0 and update % args.save_interval == 0:
         status = {"num_frames": num_frames, "update": update,
-                  "model_state": acmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
+                  "model_state": algo.acmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
         if hasattr(preprocess_obss, "vocab"):
             status["vocab"] = preprocess_obss.vocab.vocab
         utils.save_status(status, model_dir + "/train")
