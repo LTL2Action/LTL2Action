@@ -32,6 +32,7 @@ class LetterEnv(gym.Env):
         self.use_fixed_map = use_fixed_map
         self.use_agent_centric_view = use_agent_centric_view
         self.letter_types = list(set(letters))
+        self.letter_types.sort()
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(low=0, high=1, shape=(grid_size,grid_size,len(self.letter_types)+1), dtype=np.uint8)
         self.num_episodes = 0
