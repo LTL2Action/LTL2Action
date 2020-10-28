@@ -37,7 +37,7 @@ from math import floor
 
 import utils
 from model import ACModel
-
+from envs.gym_letters.letter_env import LetterEnv
 
 # Parse arguments
 
@@ -172,8 +172,9 @@ for i in range(args.procs):
 
 # Sync environments
 envs[0].reset()
-for env in envs:
-    env.env.map = envs[0].env.map
+if isinstance(envs[0], LetterEnv):
+    for env in envs:
+        env.env.map = envs[0].env.map
 
 txt_logger.info("Environments loaded\n")
 

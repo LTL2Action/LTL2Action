@@ -14,6 +14,7 @@ class SimpleLTLEnv(gym.Env):
         """
         self.letters       = letters
         self.letter_types = list(set(letters))
+        self.letter_types.sort()
         self.action_space = spaces.Discrete(len(self.letter_types))
         self.observation_space = spaces.Discrete(1)
         self.num_episodes = 0
