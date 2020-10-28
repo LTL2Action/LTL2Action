@@ -172,7 +172,8 @@ for i in range(args.procs):
 
 # Sync environments
 envs[0].reset()
-if isinstance(envs[0], LetterEnv):
+if isinstance(envs[0].env, LetterEnv):
+    txt_logger.info("Using fixed maps.")
     for env in envs:
         env.env.map = envs[0].env.map
 
