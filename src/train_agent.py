@@ -201,7 +201,7 @@ txt_logger.info("Observations preprocessor loaded.\n")
 
 # Load model
 
-acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0, args.dumb_ac)
+acmodel = ACModel(obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0, args.dumb_ac, args.unfreeze_ltl)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")

@@ -29,7 +29,7 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.ACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0, dumb_ac):
+    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0, dumb_ac, unfreeze_ltl):
         super().__init__()
 
         # Decide which components are enabled
@@ -40,7 +40,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.action_space = action_space
         self.dumb_ac = dumb_ac
 
-        self.freeze_pretrained_params = True
+        self.freeze_pretrained_params = !unfreeze_ltl
 
         # Define image embedding
         if "image" in obs_space.keys():
@@ -153,6 +153,4 @@ class ACModel(nn.Module, torch_ac.ACModel):
         if self.freeze_pretrained_params:
             for param in self.text_rnn.parameters():
                 param.requires_grad = False
-
-
 
