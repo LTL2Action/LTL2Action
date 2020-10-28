@@ -40,7 +40,8 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.action_space = action_space
         self.dumb_ac = dumb_ac
 
-        self.freeze_pretrained_params = !unfreeze_ltl
+        self.freeze_pretrained_params = not unfreeze_ltl
+        print("Frozen LTL module" if self.freeze_pretrained_params else "Unfrozen LTL module")
 
         # Define image embedding
         if "image" in obs_space.keys():
