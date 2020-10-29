@@ -70,7 +70,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         if self.gnn_type:
             hidden_dim = 32
-            self.text_embedding_size = 128
+            self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
 
         # Resize image embedding
@@ -153,5 +153,19 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         if self.freeze_pretrained_params:
             for param in self.text_rnn.parameters():
+                param.requires_grad = False
+
+    def load_pretrained_gnn(self, model_state):
+        # We delete all keys relating to the actor/critic.
+        new_model_state = model_state.copy() 
+
+        for key in model_state.keys():
+            if key.find("actor") != -1 or key.find("critic") != -1:
+                del new_model_state[key]
+
+        self.load_state_dict(new_model_state, strict=False)
+
+        if self.freeze_pretrained_params:
+            for param in self.gnn.parameters():
                 param.requires_grad = False
 

@@ -112,6 +112,7 @@ parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic
 parser.add_argument("--append-h0", action="store_true", default=False,
                     help="append the original h_0 for each convolution of the GNN")
 parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
+parser.add_argument("--pretrained-gnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
 parser.add_argument("--unfreeze-ltl", action="store_true", default=False,help="Un-freeze the gradient updates of the LTL module")
 
@@ -139,10 +140,17 @@ model_name = args.model or default_model_name
 storage_dir = "storage" if args.checkpoint_dir is None else args.checkpoint_dir
 model_dir = utils.get_model_dir(model_name, storage_dir)
 
-pretrained_rnn_dir = None
-if args.pretrained_rnn:
-    pretrained_rnn_dir = utils.get_model_dir(args.pretrained_rnn)
+pretrained_model_dir = None
 
+if args.pretrained_rnn:
+    assert(args.pretrained_gnn is None)
+    assert(args.gnn is None)
+    pretrained_model_dir = utils.get_model_dir(args.pretrained_rnn)
+
+if args.pretrained_gnn:
+    assert(args.pretrained_rnn is None)
+    assert(args.gnn is not None)
+    pretrained_model_dir = utils.get_model_dir(args.pretrained_gnn)
 # Load loggers and Tensorboard writer
 
 txt_logger = utils.get_txt_logger(model_dir + "/train")
@@ -186,11 +194,11 @@ except OSError:
     status = {"num_frames": 0, "update": 0}
 txt_logger.info("Training status loaded.\n")
 
-if args.pretrained_rnn:
+if pretrained_model_dir is not None:
     try:
-        pretrained_status = utils.get_status(pretrained_rnn_dir)
+        pretrained_status = utils.get_status(pretrained_model_dir)
     except:
-        txt_logger.info("Failed to load pretrained RNN.\n")
+        txt_logger.info("Failed to load pretrained model.\n")
         exit(1)
 
 # Load observations preprocessor
@@ -210,6 +218,11 @@ if "model_state" in status:
 if args.pretrained_rnn:
     acmodel.load_pretrained_rnn(pretrained_status["model_state"])
     txt_logger.info("Pretrained RNN loaded.\n")
+
+if args.pretrained_gnn:
+    acmodel.load_pretrained_gnn(pretrained_status["model_state"])
+    txt_logger.info("Pretrained GNN loaded.\n")
+
 acmodel.to(device)
 txt_logger.info("Model loaded.\n")
 txt_logger.info("{}\n".format(acmodel))
