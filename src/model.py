@@ -66,14 +66,14 @@ class ACModel(nn.Module, torch_ac.ACModel):
             self.word_embedding_size = 32
             self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
             self.text_embedding_size = 32
-            self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
+            self.text_rnn = nn.LSTM(self.word_embedding_size, self.text_embedding_size, num_layers=4, batch_first=True)
 
         if self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
-
-        # Resize image embedding
+       
+       # Resize image embedding
         self.embedding_size = self.image_embedding_size
         if self.use_text or self.gnn_type:
             self.embedding_size += self.text_embedding_size
@@ -136,7 +136,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         return dist, value
 
     def _get_embed_text(self, text):
-        _, hidden = self.text_rnn(self.word_embedding(text))
+        _, (hidden, _) = self.text_rnn(self.word_embedding(text))
         return hidden[-1]
 
     def load_pretrained_rnn(self, model_state):

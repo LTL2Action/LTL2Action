@@ -19,6 +19,8 @@ register(id="GCN_4x32_ROOT_SHARED", entry_point="gnns.graphs.GCN.GCNRootShared",
 
 register(id="RGCN_2x32_ROOT", entry_point="gnns.graphs.RGCN.RGCNRoot", hidden_dims=[32, 32])
 
+register(id="RGCN_4x16_ROOT", entry_point="gnns.graphs.RGCN.RGCNRoot", hidden_dims=[16] * 4)
+
 register(id="RGCN_4x32_ROOT", entry_point="gnns.graphs.RGCN.RGCNRoot", hidden_dims=[32] * 4)
 
 register(id="RGCN_8x32_ROOT", entry_point="gnns.graphs.RGCN.RGCNRoot", hidden_dims=[32] * 8)
