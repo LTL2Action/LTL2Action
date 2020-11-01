@@ -64,14 +64,15 @@ class ACModel(nn.Module, torch_ac.ACModel):
         # Define text embedding
         if self.use_text:
             self.word_embedding_size = 32
-            self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
             self.text_embedding_size = 32
-            self.text_rnn = nn.LSTM(self.word_embedding_size, self.text_embedding_size, num_layers=4, batch_first=True)
-
+            hidden_dim = 32
+            self.text_rnn = SequenceModel(obs_space["text"], self.word_embedding_size, hidden_dim, self.text_embedding_size)
+            print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
         if self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
+            print("GNN Number of parameters:", sum(p.numel() for p in self.gnn.parameters() if p.requires_grad))
        
        # Resize image embedding
         self.embedding_size = self.image_embedding_size
@@ -117,7 +118,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         # Adding Text
         if self.use_text:
-            embed_text = self._get_embed_text(obs.text)
+            embed_text = self.text_rnn(obs.text)
             embedding = torch.cat((embedding, embed_text), dim=1) if embedding is not None else embed_text
 
         # Adding GNN
@@ -134,10 +135,6 @@ class ACModel(nn.Module, torch_ac.ACModel):
         value = x.squeeze(1)
 
         return dist, value
-
-    def _get_embed_text(self, text):
-        _, (hidden, _) = self.text_rnn(self.word_embedding(text))
-        return hidden[-1]
 
     def load_pretrained_rnn(self, model_state):
 
@@ -168,4 +165,24 @@ class ACModel(nn.Module, torch_ac.ACModel):
         if self.freeze_pretrained_params:
             for param in self.gnn.parameters():
                 param.requires_grad = False
+
+
+class SequenceModel(nn.Module):
+    def __init__(self, obs_size, word_embedding_size=32, hidden_dim=32, text_embedding_size=32):
+        super().__init__()
+        self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
+        self.lstm = nn.LSTM(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
+        self.output_layer = nn.Linear(hidden_dim, text_embedding_size)
+
+    def forward(self, text):
+        _, (hidden, _) = self.lstm(self.word_embedding(text))
+        return self.output_layer(hidden[-1])
+                
+
+
+
+
+
+
+
 
