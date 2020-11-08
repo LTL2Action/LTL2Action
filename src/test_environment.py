@@ -20,8 +20,8 @@ import ltl_wrappers
 
 def test_env(env, sampler):
     env = gym.make(env)
-    #env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler="Sequence_2_3")
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler=sampler)
+    #env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler="Sequence_2_3")
+    env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler=sampler)
     str_to_action = {"w":0,"s":1,"a":2,"d":3}
 
     import random
@@ -52,7 +52,7 @@ def test_env(env, sampler):
 
 def test_simple_ltl_env(env, sampler):
     env = gym.make(env)
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression=True, ltl_sampler=sampler)
+    env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler=sampler)
 
     letter_types = env.propositions
 

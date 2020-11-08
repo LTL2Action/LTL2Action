@@ -9,7 +9,7 @@ import gym_minigrid
 import envs.gym_letters
 import ltl_wrappers
 
-def make_env(env_key, use_progression, ltl_sampler, seed=None, intrinsic=0):
+def make_env(env_key, progression_mode, ltl_sampler, seed=None, intrinsic=0):
     """
     Only support for letter envs for now
     """
@@ -17,6 +17,6 @@ def make_env(env_key, use_progression, ltl_sampler, seed=None, intrinsic=0):
     env.seed(seed)
 
     # Adding LTL wrappers
-    env = ltl_wrappers.LTLLetterEnv(env, use_progression, ltl_sampler, intrinsic)
+    env = ltl_wrappers.LTLLetterEnv(env, progression_mode, ltl_sampler, intrinsic)
 
     return env

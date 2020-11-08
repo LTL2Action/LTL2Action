@@ -103,7 +103,7 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
-parser.add_argument("--ignoreLTLprogression", action="store_true", default=False,
+parser.add_argument("--progression-mode", default="full",
                     help="the agent always receives the original LTL formula (without LTL progression)")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
@@ -134,7 +134,7 @@ if args.pretrained_rnn is not None:
 if args.unfreeze_ltl:
     gnn_name = gnn_name + "-unfreeze_ltl"
 
-default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}"
+default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}_progression:{args.progression_mode}"
 
 model_name = args.model or default_model_name
 storage_dir = "storage" if args.checkpoint_dir is None else args.checkpoint_dir
@@ -174,9 +174,9 @@ txt_logger.info(f"Device: {device}\n")
 # Load environments
 
 envs = []
-use_progression = not args.ignoreLTLprogression
+progression_mode = args.progression_mode
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, use_progression, args.ltl_sampler, args.seed, args.int_reward))
+    envs.append(utils.make_env(args.env, progression_mode, args.ltl_sampler, args.seed, args.int_reward))
 
 # Sync environments
 envs[0].reset()
@@ -204,7 +204,7 @@ if pretrained_model_dir is not None:
 
 # Load observations preprocessor
 
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None, progression_mode)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded.\n")
@@ -254,7 +254,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, useProgression=use_progression, gnn=args.gnn, append_h0 = args.append_h0, dumb_ac = args.dumb_ac))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, progression_mode=progression_mode, gnn=args.gnn, append_h0 = args.append_h0, dumb_ac = args.dumb_ac))
 
 
 # Train model

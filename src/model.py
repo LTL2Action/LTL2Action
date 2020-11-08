@@ -33,7 +33,8 @@ class ACModel(nn.Module, torch_ac.ACModel):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_text = not ignoreLTL and not gnn_type
+        self.use_progression_info = "progress_info" in obs_space
+        self.use_text = not ignoreLTL and not gnn_type and "text" in obs_space
         self.gnn_type = gnn_type
         self.append_h0 = append_h0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -62,13 +63,23 @@ class ACModel(nn.Module, torch_ac.ACModel):
             self.image_embedding_size = 0
 
         # Define text embedding
-        if self.use_text:
+        if self.use_progression_info:
+            self.text_embedding_size = 32
+            self.simple_encoder = nn.Sequential(
+                nn.Linear(obs_space["progress_info"], 64),
+                nn.Tanh(),
+                nn.Linear(64, self.text_embedding_size),
+                nn.Tanh()
+            ).to(self.device)
+            print("Linear encoder Number of parameters:", sum(p.numel() for p in self.simple_encoder.parameters() if p.requires_grad))
+
+        elif self.use_text:
             self.word_embedding_size = 32
             self.text_embedding_size = 32
-            hidden_dim = 32
-            self.text_rnn = SequenceModel(obs_space["text"], self.word_embedding_size, hidden_dim, self.text_embedding_size)
+            hidden_dim = 24
+            self.text_rnn = SequenceModel(obs_space["text"], self.word_embedding_size, hidden_dim, self.text_embedding_size).to(self.device)
             print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
-        if self.gnn_type:
+        elif self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
@@ -76,7 +87,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
        
        # Resize image embedding
         self.embedding_size = self.image_embedding_size
-        if self.use_text or self.gnn_type:
+        if self.use_text or self.gnn_type or self.use_progression_info:
             self.embedding_size += self.text_embedding_size
 
         if self.dumb_ac:
@@ -116,13 +127,17 @@ class ACModel(nn.Module, torch_ac.ACModel):
             x = x.reshape(x.shape[0], -1)
             embedding = x
 
+        if self.use_progression_info:
+            embed_ltl = self.simple_encoder(obs.progress_info)
+            embedding = torch.cat((embedding, embed_ltl), dim=1) if embedding is not None else embed_ltl
+
         # Adding Text
-        if self.use_text:
+        elif self.use_text:
             embed_text = self.text_rnn(obs.text)
             embedding = torch.cat((embedding, embed_text), dim=1) if embedding is not None else embed_text
 
         # Adding GNN
-        if self.gnn_type:
+        elif self.gnn_type:
             embed_gnn = self.gnn(obs.text)
             embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding is not None else embed_gnn
 

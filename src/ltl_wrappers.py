@@ -21,7 +21,7 @@ import ltl_progression, random
 from ltl_samplers import getLTLSampler, SequenceSampler
 
 class LTLEnv(gym.Wrapper):
-    def __init__(self, env, use_progression=True, intrinsic=0.0):
+    def __init__(self, env, progression_mode="full", intrinsic=0.0):
         """
         LTL environment
         --------------------
@@ -32,12 +32,13 @@ class LTLEnv(gym.Wrapper):
               appropriate reward function
             - However, it does requires the user to define a labeling function
               and a set of training formulas
-        use_progression:
-            - When true, the agent gets the progressed LTL formula as part of the observation
-            - When False, the agent gets the original LTL formula as part of the observation
+        progression_mode:
+            - "full": the agent gets the full, progressed LTL formula as part of the observation
+            - "partial": the agent sees which propositions (individually) will progress or falsify the formula
+            - "none": the agent gets the full, original LTL formula as part of the observation
         """
         super().__init__(env)
-        self.use_progression   = use_progression
+        self.progression_mode   = progression_mode
         self.observation_space = spaces.Dict({'features': env.observation_space})
         self.known_progressions = {}
         self.intrinsic = intrinsic
@@ -67,7 +68,10 @@ class LTLEnv(gym.Wrapper):
         self.ltl_original = self.ltl_goal
 
         # Adding the ltl goal to the observation
-        ltl_obs = {'features': self.obs,'text': self.ltl_goal}
+        if self.progression_mode == "partial":
+            ltl_obs = {'features': self.obs,'progress_info': self.progress_info(self.ltl_goal)}
+        else:
+            ltl_obs = {'features': self.obs,'text': self.ltl_goal}
         return ltl_obs
 
 
@@ -78,14 +82,7 @@ class LTLEnv(gym.Wrapper):
 
         # progressing the ltl formula
         truth_assignment = self.get_events(self.obs, action, next_obs)
-        if (self.ltl_goal, truth_assignment) not in self.known_progressions:
-            result_ltl = ltl_progression.progress_and_clean(self.ltl_goal, truth_assignment)
-            if not result_ltl in self.known_progressions.values():
-                int_reward = self.intrinsic
-
-            self.known_progressions[(self.ltl_goal, truth_assignment)] = result_ltl
-
-        self.ltl_goal = self.known_progressions[(self.ltl_goal, truth_assignment)]
+        self.ltl_goal = self.progression(self.ltl_goal, truth_assignment)
         self.obs      = next_obs
 
         # Computing the LTL reward and done signal
@@ -101,14 +98,40 @@ class LTLEnv(gym.Wrapper):
             ltl_reward = int_reward
 
         # Computing the new observation and returning the outcome of this action
-        if self.use_progression:
+        if self.progression_mode == "full":
             ltl_obs = {'features': self.obs,'text': self.ltl_goal}
-        else:
+        elif self.progression_mode == "none":
             ltl_obs = {'features': self.obs,'text': self.ltl_original}
+        elif self.progression_mode == "partial":
+            ltl_obs = {'features': self.obs, 'progress_info': self.progress_info(self.ltl_goal)}
+        else:
+            raise NotImplementedError
+
         reward  = original_reward + ltl_reward
         done    = env_done or ltl_done
         return ltl_obs, reward, done, info
 
+    def progression(self, ltl_formula, truth_assignment):
+
+        if (ltl_formula, truth_assignment) not in self.known_progressions:
+            result_ltl = ltl_progression.progress_and_clean(ltl_formula, truth_assignment)
+            self.known_progressions[(ltl_formula, truth_assignment)] = result_ltl
+
+        return self.known_progressions[(ltl_formula, truth_assignment)]
+
+
+    # # X is a vector where index i is 1 if prop i progresses the formula, -1 if it falsifies it, 0 otherwise. 
+    def progress_info(self, ltl_formula):
+        propositions = self.env.get_propositions()
+        X = np.zeros(len(self.propositions))
+
+        for i in range(len(propositions)):
+            progress_i = self.progression(ltl_formula, propositions[i])
+            if progress_i == 'False':
+                X[i] = -1.
+            elif progress_i != ltl_formula:
+                X[i] = 1. 
+        return X
 
 class IgnoreLTLWrapper(gym.Wrapper):
     def __init__(self, env):
@@ -132,8 +155,8 @@ class IgnoreLTLWrapper(gym.Wrapper):
 
 
 class LTLLetterEnv(LTLEnv):
-    def __init__(self, env, use_progression=True, ltl_sampler=None, intrinsic=0.0):
-        super().__init__(env, use_progression, intrinsic)
+    def __init__(self, env, progression_mode="full", ltl_sampler=None, intrinsic=0.0):
+        super().__init__(env, progression_mode, intrinsic)
         self.propositions = self.env.get_propositions()
         self.sampler = getLTLSampler(ltl_sampler, self.propositions)
 
