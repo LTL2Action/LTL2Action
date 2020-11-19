@@ -1,10 +1,13 @@
 from gym.envs.registration import register
 
+
+### Simple LTL Envs
 register(
     id='Simple-LTL-Env-v0',
     entry_point='envs.gym_letters.simple_ltl_env:SimpleLTLEnvDefault'
 )
 
+### Letter Envs
 register(
     id='Letter-4x4-v0',
     entry_point='envs.gym_letters.letter_env:LetterEnv4x4'
@@ -63,4 +66,11 @@ register(
 register(
     id='Letter-7x7-v3',
     entry_point='envs.gym_letters.letter_env:LetterEnvAgentCentricFixedMap7x7'
+)
+
+
+### Minigrid Envs
+register(
+    id='Adversarial-v0',
+    entry_point='envs.gym_letters.minigrid_env:AdversarialMinigridEnv'
 )
