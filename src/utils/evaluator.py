@@ -18,6 +18,7 @@ class Eval:
                 seed=0, device="cpu", argmax=False,
                 num_procs=1, ignoreLTL=False, useProgression=True, gnn=None, append_h0 = False, dumb_ac = False):
 
+        self.env = env
         self.device = device
         self.argmax = argmax
         self.num_procs = num_procs
@@ -40,7 +41,7 @@ class Eval:
     def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
 
-        agent = utils.Agent(self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train",
+        agent = utils.Agent(self.env, self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train",
                 self.ignoreLTL, gnn=self.gnn, append_h0 = self.append_h0, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 

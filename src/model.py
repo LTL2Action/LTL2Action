@@ -18,6 +18,8 @@ import torch_ac
 from gnns.graphs.GCN import *
 from gnns.graphs.GNN import GNNMaker
 
+from env_model import getEnvModel
+
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
     classname = m.__class__.__name__
@@ -29,7 +31,7 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.ACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, gnn_type, append_h0, dumb_ac, unfreeze_ltl):
+    def __init__(self, env, obs_space, action_space, ignoreLTL, gnn_type, append_h0, dumb_ac, unfreeze_ltl):
         super().__init__()
 
         # Decide which components are enabled
@@ -44,23 +46,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.freeze_pretrained_params = not unfreeze_ltl
         print("Frozen LTL module" if self.freeze_pretrained_params else "Unfrozen LTL module")
 
-        # Define image embedding
-        if "image" in obs_space.keys():
-            n = obs_space["image"][0]
-            m = obs_space["image"][1]
-            k = obs_space["image"][2]
-            self.image_conv = nn.Sequential(
-                nn.Conv2d(k, 16, (2, 2)),
-                nn.ReLU(),
-                nn.Conv2d(16, 32, (2, 2)),
-                nn.ReLU(),
-                nn.Conv2d(32, 64, (2, 2)),
-                nn.ReLU()
-            )
-            #self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
-            self.image_embedding_size = (n-3)*(m-3)*64
-        else:
-            self.image_embedding_size = 0
+        self.env_model = getEnvModel(env, obs_space)
 
         # Define text embedding
         if self.use_progression_info:
@@ -84,9 +70,9 @@ class ACModel(nn.Module, torch_ac.ACModel):
             self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
             print("GNN Number of parameters:", sum(p.numel() for p in self.gnn.parameters() if p.requires_grad))
-       
+
        # Resize image embedding
-        self.embedding_size = self.image_embedding_size
+        self.embedding_size = self.env_model.size()
         if self.use_text or self.gnn_type or self.use_progression_info:
             self.embedding_size += self.text_embedding_size
 
@@ -119,13 +105,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.apply(init_params)
 
     def forward(self, obs):
-        embedding = None 
-
-        if "image" in obs.keys():
-            x = obs.image.transpose(1, 3).transpose(2, 3)
-            x = self.image_conv(x)
-            x = x.reshape(x.shape[0], -1)
-            embedding = x
+        embedding = self.env_model(obs)
 
         if self.use_progression_info:
             embed_ltl = self.simple_encoder(obs.progress_info)
@@ -155,7 +135,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         # We delete all keys relating to the actor/critic.
         # We only wish to load the `word_embedding` and `text_rnn` parameters in new_model_state.
-        new_model_state = model_state.copy() 
+        new_model_state = model_state.copy()
 
         for key in model_state.keys():
             if key.find("actor") != -1 or key.find("critic") != -1:
@@ -169,7 +149,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
     def load_pretrained_gnn(self, model_state):
         # We delete all keys relating to the actor/critic.
-        new_model_state = model_state.copy() 
+        new_model_state = model_state.copy()
 
         for key in model_state.keys():
             if key.find("actor") != -1 or key.find("critic") != -1:
@@ -192,7 +172,7 @@ class SequenceModel(nn.Module):
     def forward(self, text):
         _, (hidden, _) = self.lstm(self.word_embedding(text))
         return self.output_layer(hidden[-1])
-                
+
 
 
 
