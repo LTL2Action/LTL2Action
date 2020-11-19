@@ -2,11 +2,15 @@ import torch
 import torch.nn as nn
 
 from envs.gym_letters.letter_env import LetterEnv
-
+from envs.gym_letters.minigrid_env import MinigridEnv
 
 def getEnvModel(env, obs_space):
     if isinstance(env, LetterEnv):
         return LetterEnvModel(obs_space)
+
+    elif isinstance(env, MinigridEnv):
+        return MinigridEnvModel(obs_space)
+
     # Add your EnvModel here...
     else: # The default case (No environment observations) - SimpleLTLEnv uses this
         return EnvModel(obs_space)
@@ -63,3 +67,30 @@ class LetterEnvModel(EnvModel):
 
         return super().forward(obs)
 
+class MinigridEnvModel(EnvModel):
+    def __init__(self, obs_space):
+        super().__init__(obs_space)
+
+        if "image" in obs_space.keys():
+            n = obs_space["image"][0]
+            m = obs_space["image"][1]
+            k = obs_space["image"][2]
+            self.image_conv = nn.Sequential(
+                nn.Conv2d(k, 16, (2, 2)),
+                nn.ReLU(),
+                nn.MaxPool2d((2, 2)),
+                nn.Conv2d(16, 32, (2, 2)),
+                nn.ReLU(),
+                nn.Conv2d(32, 64, (2, 2)),
+                nn.ReLU()
+            )
+            self.embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
+
+    def forward(self, obs):
+        if "image" in obs.keys():
+            x = obs.image.transpose(1, 3).transpose(2, 3)
+            x = self.image_conv(x)
+            x = x.reshape(x.shape[0], -1)
+            return x
+
+        return super().forward(obs)

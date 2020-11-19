@@ -24,9 +24,9 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn, progression_mode):
                 "image": preprocess_images(obss, device=device)
             })
 
-    # Check if it is a MiniGrid observation space
+    # Check if it is a Letter-Env or MiniGrid observation space
     elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], gym.spaces.Box):
-        print("MINIGRID ENV")
+        print("Letter-Env or MiniGrid")
         if progression_mode == "partial":
             obs_space = {"image": obs_space.spaces["features"].shape, "progress_info": len(vocab_space)}
             vocab_space = {"max_size": len(vocab_space) + 9, "tokens": vocab_space}
@@ -55,7 +55,7 @@ def get_obss_preprocessor(obs_space, vocab_space, gnn, progression_mode):
 
     # Check if it's a simple LTL observation space
     elif isinstance(obs_space, gym.spaces.Dict) and list(obs_space.spaces.keys()) == ["features"] and isinstance(obs_space.spaces["features"], gym.spaces.Discrete):
-        print("SIMPLE-LTL ENV")
+        print("Simple-LTL Env")
 
         if progression_mode == "partial":
             obs_space = {"progress_info": len(vocab_space)}

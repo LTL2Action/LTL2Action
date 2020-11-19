@@ -106,6 +106,14 @@ class SequenceSampler(LTLSampler):
             return ('eventually',seq)
         return ('eventually',('and', seq[0], self._get_sequence(seq[1:])))
 
+class AdversarialEnvSampler(LTLSampler):
+    def sample(self):
+        p = random.randint(0,1)
+        if p == 0:
+            return ('eventually', ('and', 'a', ('eventually', 'b')))
+        else:
+            return ('eventually', ('and', 'a', ('eventually', 'c')))
+
 def getRegisteredSamplers(propositions):
     return [SequenceSampler(propositions),
             UntilTaskSampler(propositions),
@@ -130,6 +138,8 @@ def getLTLSampler(sampler_id, propositions):
         return UntilTaskSampler(propositions, tokens[1], tokens[2], tokens[3], tokens[4])
     elif (tokens[0] == "SuperSampler"):
         return SuperSampler(propositions)
+    elif (tokens[0] == "AdversarialSampler"):
+        return AdversarialEnvSampler(propositions)
     else: # "Default"
         return DefaultSampler(propositions)
 
