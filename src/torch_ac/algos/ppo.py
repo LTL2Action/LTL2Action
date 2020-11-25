@@ -20,6 +20,7 @@ class PPOAlgo(BaseAlgo):
         self.clip_eps = clip_eps
         self.epochs = epochs
         self.batch_size = batch_size
+        self.act_shape = envs[0].action_space.shape
 
         assert self.batch_size % self.recurrence == 0
 
@@ -66,7 +67,11 @@ class PPOAlgo(BaseAlgo):
 
                     entropy = dist.entropy().mean()
 
-                    ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
+                    # ratio = torch.exp(dist.log_prob(sb.action) - sb.log_prob)
+                    delta_log_prob = dist.log_prob(sb.action) - sb.log_prob
+                    if (len(self.act_shape) == 1): # Not scalar actions (multivariate)
+                        delta_log_prob = torch.sum(delta_log_prob, dim=1)
+                    ratio = torch.exp(delta_log_prob)
                     surr1 = ratio * sb.advantage
                     surr2 = torch.clamp(ratio, 1.0 - self.clip_eps, 1.0 + self.clip_eps) * sb.advantage
                     policy_loss = -torch.min(surr1, surr2).mean()

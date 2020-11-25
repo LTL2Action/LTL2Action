@@ -4,6 +4,8 @@ import torch
 from torch_ac.format import default_preprocess_obss
 from torch_ac.utils import DictList, ParallelEnv
 
+import numpy as np
+
 class BaseAlgo(ABC):
     """The base class for RL algorithms."""
 
@@ -58,6 +60,7 @@ class BaseAlgo(ABC):
         self.recurrence = recurrence
         self.preprocess_obss = preprocess_obss or default_preprocess_obss
         self.reshape_reward = reshape_reward
+        self.action_space_shape = envs[0].action_space.shape
 
         # Control parameters
 
@@ -77,6 +80,7 @@ class BaseAlgo(ABC):
         # Initialize experience values
 
         shape = (self.num_frames_per_proc, self.num_procs)
+        act_shape = shape + self.action_space_shape
 
         self.obs = self.env.reset()
         self.obss = [None]*(shape[0])
@@ -85,11 +89,11 @@ class BaseAlgo(ABC):
             self.memories = torch.zeros(*shape, self.acmodel.memory_size, device=self.device)
         self.mask = torch.ones(shape[1], device=self.device)
         self.masks = torch.zeros(*shape, device=self.device)
-        self.actions = torch.zeros(*shape, device=self.device, dtype=torch.int)
+        self.actions = torch.zeros(*act_shape, device=self.device)#, dtype=torch.int)
         self.values = torch.zeros(*shape, device=self.device)
         self.rewards = torch.zeros(*shape, device=self.device)
         self.advantages = torch.zeros(*shape, device=self.device)
-        self.log_probs = torch.zeros(*shape, device=self.device)
+        self.log_probs = torch.zeros(*act_shape, device=self.device)
 
         # Initialize log values
 
@@ -208,12 +212,12 @@ class BaseAlgo(ABC):
             # T x P -> P x T -> (P * T) x 1
             exps.mask = self.masks.transpose(0, 1).reshape(-1).unsqueeze(1)
         # for all tensors below, T x P -> P x T -> P * T
-        exps.action = self.actions.transpose(0, 1).reshape(-1)
+        exps.action = self.actions.transpose(0, 1).reshape((-1, ) + self.action_space_shape)
         exps.value = self.values.transpose(0, 1).reshape(-1)
         exps.reward = self.rewards.transpose(0, 1).reshape(-1)
         exps.advantage = self.advantages.transpose(0, 1).reshape(-1)
         exps.returnn = exps.value + exps.advantage
-        exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
+        exps.log_prob = self.log_probs.transpose(0, 1).reshape((-1, ) + self.action_space_shape)
 
         # Preprocess experiences
 

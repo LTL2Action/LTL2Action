@@ -12,13 +12,16 @@ Each of those tokens get a one-hot embedding representation by the utils.format.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions.categorical import Categorical
+from torch.distributions import Categorical, Normal
 import torch_ac
+
+from gym.spaces import Box, Discrete
 
 from gnns.graphs.GCN import *
 from gnns.graphs.GNN import GNNMaker
 
 from env_model import getEnvModel
+from policy_network import PolicyNetwork
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def init_params(m):
@@ -73,14 +76,13 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
        # Resize image embedding
         self.embedding_size = self.env_model.size()
+        print("embedding size:", self.embedding_size)
         if self.use_text or self.gnn_type or self.use_progression_info:
             self.embedding_size += self.text_embedding_size
 
         if self.dumb_ac:
             # Define actor's model
-            self.actor = nn.Sequential(
-                nn.Linear(self.embedding_size, self.action_space.n)
-            )
+            self.actor = PolicyNetwork(self.embedding_size, self.action_space)
 
             # Define critic's model
             self.critic = nn.Sequential(
@@ -88,11 +90,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
             )
         else:
             # Define actor's model
-            self.actor = nn.Sequential(
-                nn.Linear(self.embedding_size, 64),
-                nn.Tanh(),
-                nn.Linear(64, self.action_space.n)
-            )
+            self.actor = PolicyNetwork(self.embedding_size, self.action_space, hiddens=[64], activation=nn.ReLU())
 
             # Define critic's model
             self.critic = nn.Sequential(
@@ -122,8 +120,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
             embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding is not None else embed_gnn
 
         # Actor
-        x = self.actor(embedding)
-        dist = Categorical(logits=F.log_softmax(x, dim=1))
+        dist = self.actor(embedding)
 
         # Critic
         x = self.critic(embedding)

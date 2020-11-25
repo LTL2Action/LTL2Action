@@ -176,7 +176,7 @@ txt_logger.info(f"Device: {device}\n")
 envs = []
 progression_mode = args.progression_mode
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, progression_mode, args.ltl_sampler, args.seed, args.int_reward))
+    envs.append(utils.make_env(args.env, progression_mode, args.ltl_sampler, args.seed, args.int_reward, args.ignoreLTL))
 
 # Sync environments
 envs[0].reset()
@@ -203,7 +203,6 @@ if pretrained_model_dir is not None:
         exit(1)
 
 # Load observations preprocessor
-
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None, progression_mode)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
@@ -324,3 +323,19 @@ while num_frames < args.frames:
             # we send the num_frames to align the eval curves with the training curves on TB
             for evalu in evals:
                 evalu.eval(num_frames, episodes=args.eval_episodes)
+
+    # if update % 10 == 0:
+    #     env = envs[0].env
+    #     observation = env.reset()
+    #     for t in range(5000):
+    #         # env.render()
+    #         # print(observation)
+    #         obs = preprocess_obss(observation)
+    #         print("HeHEHEHEHE", obs)
+    #         action = algo.acmodel(obs)
+    #         # action = env.action_space.sample()
+    #         observation, reward, done, info = env.step(action)
+    #         if done:
+    #             print("Episode finished after {} timesteps".format(t+1))
+    #             break
+    #     env.close()

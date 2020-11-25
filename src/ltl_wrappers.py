@@ -120,7 +120,7 @@ class LTLEnv(gym.Wrapper):
         return self.known_progressions[(ltl_formula, truth_assignment)]
 
 
-    # # X is a vector where index i is 1 if prop i progresses the formula, -1 if it falsifies it, 0 otherwise. 
+    # # X is a vector where index i is 1 if prop i progresses the formula, -1 if it falsifies it, 0 otherwise.
     def progress_info(self, ltl_formula):
         propositions = self.env.get_propositions()
         X = np.zeros(len(self.propositions))
@@ -130,7 +130,7 @@ class LTLEnv(gym.Wrapper):
             if progress_i == 'False':
                 X[i] = -1.
             elif progress_i != ltl_formula:
-                X[i] = 1. 
+                X[i] = 1.
         return X
 
 class IgnoreLTLWrapper(gym.Wrapper):
@@ -140,18 +140,24 @@ class IgnoreLTLWrapper(gym.Wrapper):
         It is useful to check the performance of off-the-shelf agents
         """
         super().__init__(env)
-        self.observation_space =  env.observation_space['features']
+        self.observation_space = env.observation_space
+        # self.observation_space =  env.observation_space['features']
 
     def reset(self):
         obs = self.env.reset()
-        obs = obs['features']
+        # obs = obs['features']
+        # obs = {'features': obs}
         return obs
 
     def step(self, action):
         # executing the action in the environment
         obs, reward, done, info = self.env.step(action)
-        obs = obs['features']
+        # obs = obs['features']
+        # obs = {'features': obs}
         return obs, reward, done, info
+
+    def get_propositions(self):
+        return list([])
 
 
 class LTLLetterEnv(LTLEnv):

@@ -3,17 +3,22 @@ import torch.nn as nn
 
 from envs.gym_letters.letter_env import LetterEnv
 from envs.gym_letters.minigrid_env import MinigridEnv
+from gym.envs.classic_control import PendulumEnv
+
 
 def getEnvModel(env, obs_space):
+    env = env.unwrapped
     if isinstance(env, LetterEnv):
         return LetterEnvModel(obs_space)
-
-    elif isinstance(env, MinigridEnv):
+    if isinstance(env, MinigridEnv):
         return MinigridEnvModel(obs_space)
-
+    if isinstance(env, PendulumEnv):
+        return PendulumEnvModel(obs_space)
     # Add your EnvModel here...
-    else: # The default case (No environment observations) - SimpleLTLEnv uses this
-        return EnvModel(obs_space)
+
+
+    # The default case (No environment observations) - SimpleLTLEnv uses this
+    return EnvModel(obs_space)
 
 
 """
@@ -28,7 +33,6 @@ How to subclass this:
     4. Add the if statement in the getEnvModel() method
 """
 class EnvModel(nn.Module):
-    #
     def __init__(self, obs_space):
         super().__init__()
         self.embedding_size = 0
@@ -91,6 +95,29 @@ class MinigridEnvModel(EnvModel):
             x = obs.image.transpose(1, 3).transpose(2, 3)
             x = self.image_conv(x)
             x = x.reshape(x.shape[0], -1)
+            return x
+
+        return super().forward(obs)
+
+
+class PendulumEnvModel(EnvModel):
+    def __init__(self, obs_space):
+        super().__init__(obs_space)
+
+        if "image" in obs_space.keys():
+            self.net_ = nn.Sequential(
+                nn.Linear(obs_space["image"][0], 3),
+                nn.Tanh(),
+                # nn.Linear(3, 3),
+                # nn.Tanh()
+            )
+            self.embedding_size = 3
+
+    def forward(self, obs):
+        if "image" in obs.keys():
+            x = obs.image
+            # x = torch.cat((x, x * x), 1)
+            x = self.net_(x)
             return x
 
         return super().forward(obs)
