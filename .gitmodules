@@ -1,0 +1,3 @@
+[submodule "src/envs/safety/safety-gym"]
+	path = src/envs/safety/safety-gym
+	url = https://github.com/openai/safety-gym.git
