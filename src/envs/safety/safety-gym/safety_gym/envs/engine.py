@@ -85,7 +85,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
     '''
     Engine: an environment-building tool for safe exploration research.
 
-    The Engine() class entails everything to do with the tasks and safety 
+    The Engine() class entails everything to do with the tasks and safety
     requirements of Safety Gym environments. An Engine() uses a World() object
     to interface to MuJoCo. World() configurations are inferred from Engine()
     configurations, so an environment in Safety Gym can be completely specified
@@ -148,10 +148,10 @@ class Engine(gym.Env, gym.utils.EzPickle):
         # Render options
         'render_labels': False,
         'render_lidar_markers': True,
-        'render_lidar_radius': 0.15, 
-        'render_lidar_size': 0.025, 
-        'render_lidar_offset_init': 0.5, 
-        'render_lidar_offset_delta': 0.06, 
+        'render_lidar_radius': 0.15,
+        'render_lidar_size': 0.025,
+        'render_lidar_offset_init': 0.5,
+        'render_lidar_offset_delta': 0.06,
 
         # Vision observation parameters
         'vision_size': (60, 40),  # Size (width, height) of vision observation; gets flipped internally to (rows, cols) format
@@ -296,11 +296,13 @@ class Engine(gym.Env, gym.utils.EzPickle):
     def __init__(self, config={}):
         # First, parse configuration. Important note: LOTS of stuff happens in
         # parse, and many attributes of the class get set through setattr. If you
-        # are trying to track down where an attribute gets initially set, and 
+        # are trying to track down where an attribute gets initially set, and
         # can't find it anywhere else, it's probably set via the config dict
         # and this parse function.
         self.parse(config)
         gym.utils.EzPickle.__init__(self, config=config)
+
+        self.set_hazards_cols()
 
         # Load up a simulation of the robot, just to figure out observation space
         self.robot = Robot(self.robot_base)
@@ -392,6 +394,10 @@ class Engine(gym.Env, gym.utils.EzPickle):
     def walls_pos(self):
         ''' Helper to get the hazards positions from layout '''
         return [self.data.get_body_xpos(f'wall{i}').copy() for i in range(self.walls_num)]
+
+
+    def set_hazards_cols(self):
+        self.hazard_rgbs = np.tile(np.array([0, 0, 1, 1]), (self.hazards_num, 1))
 
     def build_observation_space(self):
         ''' Construct observtion space.  Happens only once at during __init__ '''
@@ -592,23 +598,23 @@ class Engine(gym.Env, gym.utils.EzPickle):
         return (xmin + keepout, ymin + keepout, xmax - keepout, ymax - keepout)
 
     def draw_placement(self, placements, keepout):
-        ''' 
+        '''
         Sample an (x,y) location, based on potential placement areas.
 
-        Summary of behavior: 
+        Summary of behavior:
 
-        'placements' is a list of (xmin, xmax, ymin, ymax) tuples that specify 
-        rectangles in the XY-plane where an object could be placed. 
+        'placements' is a list of (xmin, xmax, ymin, ymax) tuples that specify
+        rectangles in the XY-plane where an object could be placed.
 
         'keepout' describes how much space an object is required to have
         around it, where that keepout space overlaps with the placement rectangle.
 
         To sample an (x,y) pair, first randomly select which placement rectangle
         to sample from, where the probability of a rectangle is weighted by its
-        area. If the rectangles are disjoint, there's an equal chance the (x,y) 
+        area. If the rectangles are disjoint, there's an equal chance the (x,y)
         location will wind up anywhere in the placement space. If they overlap, then
         overlap areas are double-counted and will have higher density. This allows
-        the user some flexibility in building placement distributions. Finally, 
+        the user some flexibility in building placement distributions. Finally,
         randomly draw a uniform point within the selected rectangle.
 
         '''
@@ -719,7 +725,8 @@ class Engine(gym.Env, gym.utils.EzPickle):
                         'contype': 0,
                         'conaffinity': 0,
                         'group': GROUP_HAZARD,
-                        'rgba': COLOR_HAZARD * [1, 1, 1, 0.25]} #0.1]}  # transparent
+                        # 'rgba': COLOR_HAZARD * [1, 1, 1, 0.25]} #0.1]}  # transparent
+                        'rgba': self.hazard_rgbs[i] * [1, 1, 1, 0.25]} #0.1]}  # transparent
                 world_config['geoms'][name] = geom
         if self.pillars_num:
             for i in range(self.pillars_num):
@@ -1413,7 +1420,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
             self.viewer.draw_pixels(self.save_obs_vision, 0, 0)
 
     def render(self,
-               mode='human', 
+               mode='human',
                camera_id=None,
                width=DEFAULT_WIDTH,
                height=DEFAULT_HEIGHT
