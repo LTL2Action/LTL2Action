@@ -72,3 +72,12 @@ register(
     id='Adversarial-v0',
     entry_point='envs.gym_letters.minigrid_env:AdversarialMinigridEnv'
 )
+
+### Safety Envs
+register(id='SafexpTest-v0',
+         # entry_point='safety_gym.envs.mujoco:Engine',
+         entry_point='envs.safety.safety_env:SafetyEnv')
+         # kwargs={'config': config})
+
+register(id='SafexpPlay-v0',
+         entry_point='envs.safety.safety_env:PlayEnv')
