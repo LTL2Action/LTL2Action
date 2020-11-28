@@ -5,32 +5,32 @@ import argparse
 import numpy as np
 import gym
 import gym_minigrid
+import ltl_wrappers
 from gym_minigrid.wrappers import *
 from gym_minigrid.window import Window
-from envs.gym_letters.adversarial import *
+
+from envs.minigrid.adversarial import *
 
 
 def redraw(img):
     if not args.agent_view:
-        img = env.render(mode='rgb_array', tile_size=args.tile_size)
+        img = base_env.render(mode='rgb_array', tile_size=args.tile_size)
 
     window.show_img(img)
 
 def reset():
     if args.seed != -1:
-        env.seed(args.seed)
+        ltl_env.seed(args.seed)
 
-    obs = env.reset()
+    obs = ltl_env.reset()
 
-    if hasattr(env, 'mission'):
-        print('Mission: %s' % env.mission)
-        window.set_caption(env.mission)
+    window.set_caption(ltl_env.ltl_goal)
 
     redraw(obs)
 
 def step(action):
-    obs, reward, done, info = env.step(action)
-    print('step=%s, reward=%.2f' % (env.step_count, reward))
+    obs, reward, done, info = ltl_env.step(action)
+    print('step=%s, reward=%.2f' % (base_env.step_count, reward))
 
     if done:
         print('done!')
@@ -50,28 +50,28 @@ def key_handler(event):
         return
 
     if event.key == 'left':
-        step(env.actions.left)
+        step(base_env.actions.left)
         return
     if event.key == 'right':
-        step(env.actions.right)
+        step(base_env.actions.right)
         return
     if event.key == 'up':
-        step(env.actions.forward)
+        step(base_env.actions.forward)
         return
 
     # Spacebar
     if event.key == ' ':
-        step(env.actions.toggle)
+        step(base_env.actions.toggle)
         return
     if event.key == 'pageup':
-        step(env.actions.pickup)
+        step(base_env.actions.pickup)
         return
     if event.key == 'pagedown':
-        step(env.actions.drop)
+        step(base_env.actions.drop)
         return
 
     if event.key == 'enter':
-        step(env.actions.done)
+        step(base_env.actions.done)
         return
 
 parser = argparse.ArgumentParser()
@@ -101,12 +101,12 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+# `base_env` is the backend minigrid
+# `env` is the (1-level) wrapped minigrid from our code
+# `ltl_env` is the (2-level) wrapped minigrid with LTL goals
 env = gym.make(args.env)
-#env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler="AdversarialSampler")
-
-if args.agent_view:
-    env = RGBImgPartialObsWrapper(env)
-    env = ImgObsWrapper(env)
+base_env = env.env
+ltl_env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler="AdversarialSampler")
 
 window = Window('gym_minigrid - ' + args.env)
 window.reg_key_handler(key_handler)

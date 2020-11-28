@@ -70,7 +70,7 @@ register(
 ### Minigrid Envs
 register(
     id='Adversarial-v0',
-    entry_point='envs.gym_letters.minigrid_env:AdversarialMinigridEnv'
+    entry_point='envs.minigrid.minigrid_env:AdversarialMinigridEnv'
 )
 
 ### Safety Envs

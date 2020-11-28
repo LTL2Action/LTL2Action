@@ -1,6 +1,6 @@
 from gym_minigrid.minigrid import *
 from gym_minigrid.register import register
-from envs.gym_letters.minigrid_extensions import *
+from envs.minigrid.minigrid_extensions import *
 
 from random import randint
 
@@ -116,5 +116,5 @@ class AdversarialEnv9x9(AdversarialEnv):
 
 register(
     id='MiniGrid-Adversarial-v0',
-    entry_point='envs.gym_letters.adversarial:AdversarialEnv9x9'
+    entry_point='envs.minigrid.adversarial:AdversarialEnv9x9'
 )

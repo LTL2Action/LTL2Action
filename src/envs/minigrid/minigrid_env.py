@@ -7,7 +7,7 @@ import random, math, os
 import numpy as np
 import gym
 from gym import spaces
-from envs.gym_letters.adversarial import *
+from envs.minigrid.adversarial import *
 
 class MinigridEnv(gym.Env):
     """
