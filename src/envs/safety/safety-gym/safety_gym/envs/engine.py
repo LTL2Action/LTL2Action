@@ -302,8 +302,6 @@ class Engine(gym.Env, gym.utils.EzPickle):
         self.parse(config)
         gym.utils.EzPickle.__init__(self, config=config)
 
-        self.set_hazards_cols()
-
         # Load up a simulation of the robot, just to figure out observation space
         self.robot = Robot(self.robot_base)
 
@@ -394,10 +392,6 @@ class Engine(gym.Env, gym.utils.EzPickle):
     def walls_pos(self):
         ''' Helper to get the hazards positions from layout '''
         return [self.data.get_body_xpos(f'wall{i}').copy() for i in range(self.walls_num)]
-
-
-    def set_hazards_cols(self):
-        self.hazard_rgbs = np.tile(np.array([0, 0, 1, 1]), (self.hazards_num, 1))
 
     def build_observation_space(self):
         ''' Construct observtion space.  Happens only once at during __init__ '''
@@ -725,8 +719,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
                         'contype': 0,
                         'conaffinity': 0,
                         'group': GROUP_HAZARD,
-                        # 'rgba': COLOR_HAZARD * [1, 1, 1, 0.25]} #0.1]}  # transparent
-                        'rgba': self.hazard_rgbs[i] * [1, 1, 1, 0.25]} #0.1]}  # transparent
+                        'rgba': COLOR_HAZARD * [1, 1, 1, 0.25]} #0.1]}  # transparent
                 world_config['geoms'][name] = geom
         if self.pillars_num:
             for i in range(self.pillars_num):
@@ -1044,9 +1037,8 @@ class Engine(gym.Env, gym.utils.EzPickle):
                 obs[bin_minus] = max(obs[bin_minus], (1 - alias) * sensor)
         return obs
 
-    def obs(self):
-        ''' Return the observation of our agent '''
-        self.sim.forward()  # Needed to get sensordata correct
+
+    def build_obs(self):
         obs = {}
 
         if self.observe_goal_dist:
@@ -1118,6 +1110,14 @@ class Engine(gym.Env, gym.utils.EzPickle):
             obs['ctrl'] = self.data.ctrl.copy()
         if self.observe_vision:
             obs['vision'] = self.obs_vision()
+
+        return obs
+
+    def obs(self):
+        ''' Return the observation of our agent '''
+        self.sim.forward()  # Needed to get sensordata correct
+        obs = self.build_obs()
+
         if self.observation_flatten:
             flat_obs = np.zeros(self.obs_flat_size)
             offset = 0
@@ -1419,35 +1419,7 @@ class Engine(gym.Env, gym.utils.EzPickle):
         if self.observe_vision and self.vision_render:
             self.viewer.draw_pixels(self.save_obs_vision, 0, 0)
 
-    def render(self,
-               mode='human',
-               camera_id=None,
-               width=DEFAULT_WIDTH,
-               height=DEFAULT_HEIGHT
-               ):
-        ''' Render the environment to the screen '''
-
-        if self.viewer is None or mode!=self._old_render_mode:
-            # Set camera if specified
-            if mode == 'human':
-                self.viewer = MjViewer(self.sim)
-                self.viewer.cam.fixedcamid = -1
-                self.viewer.cam.type = const.CAMERA_FREE
-            else:
-                self.viewer = MjRenderContextOffscreen(self.sim)
-                self.viewer._hide_overlay = True
-                self.viewer.cam.fixedcamid = camera_id #self.model.camera_name2id(mode)
-                self.viewer.cam.type = const.CAMERA_FIXED
-            self.viewer.render_swap_callback = self.render_swap_callback
-            # Turn all the geom groups on
-            self.viewer.vopt.geomgroup[:] = 1
-            self._old_render_mode = mode
-        self.viewer.update_sim(self.sim)
-
-        if camera_id is not None:
-            # Update camera if desired
-            self.viewer.cam.fixedcamid = camera_id
-
+    def render_lidars(self):
         # Lidar markers
         if self.render_lidar_markers:
             offset = self.render_lidar_offset_init  # Height offset for successive lidar indicators
@@ -1484,6 +1456,39 @@ class Engine(gym.Env, gym.utils.EzPickle):
             if 'vases_lidar' in self.obs_space_dict:
                 self.render_lidar(self.vases_pos, COLOR_VASE, offset, GROUP_VASE)
                 offset += self.render_lidar_offset_delta
+
+        return offset
+
+    def render(self,
+               mode='human',
+               camera_id=None,
+               width=DEFAULT_WIDTH,
+               height=DEFAULT_HEIGHT
+               ):
+        ''' Render the environment to the screen '''
+
+        if self.viewer is None or mode!=self._old_render_mode:
+            # Set camera if specified
+            if mode == 'human':
+                self.viewer = MjViewer(self.sim)
+                self.viewer.cam.fixedcamid = -1
+                self.viewer.cam.type = const.CAMERA_FREE
+            else:
+                self.viewer = MjRenderContextOffscreen(self.sim)
+                self.viewer._hide_overlay = True
+                self.viewer.cam.fixedcamid = camera_id #self.model.camera_name2id(mode)
+                self.viewer.cam.type = const.CAMERA_FIXED
+            self.viewer.render_swap_callback = self.render_swap_callback
+            # Turn all the geom groups on
+            self.viewer.vopt.geomgroup[:] = 1
+            self._old_render_mode = mode
+        self.viewer.update_sim(self.sim)
+
+        if camera_id is not None:
+            # Update camera if desired
+            self.viewer.cam.fixedcamid = camera_id
+
+        self.render_lidars()
 
         # Add goal marker
         if self.task == 'button':

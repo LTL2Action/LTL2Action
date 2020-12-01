@@ -74,10 +74,10 @@ register(
 )
 
 ### Safety Envs
-register(id='SafexpTest-v0',
-         # entry_point='safety_gym.envs.mujoco:Engine',
-         entry_point='envs.safety.safety_env:SafetyEnv')
-         # kwargs={'config': config})
+register(
+    id='Safety-Test-v0',
+    entry_point='envs.safety.safety_env:SafetyEnv')
 
-register(id='SafexpPlay-v0',
-         entry_point='envs.safety.safety_env:PlayEnv')
+register(
+    id='Safety-Play-v0',
+    entry_point='envs.safety.safety_env:PlayEnv')

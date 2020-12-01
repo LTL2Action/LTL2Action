@@ -323,19 +323,3 @@ while num_frames < args.frames:
             # we send the num_frames to align the eval curves with the training curves on TB
             for evalu in evals:
                 evalu.eval(num_frames, episodes=args.eval_episodes)
-
-    # if update % 10 == 0:
-    #     env = envs[0].env
-    #     observation = env.reset()
-    #     for t in range(5000):
-    #         # env.render()
-    #         # print(observation)
-    #         obs = preprocess_obss(observation)
-    #         print("HeHEHEHEHE", obs)
-    #         action = algo.acmodel(obs)
-    #         # action = env.action_space.sample()
-    #         observation, reward, done, info = env.step(action)
-    #         if done:
-    #             print("Episode finished after {} timesteps".format(t+1))
-    #             break
-    #     env.close()
