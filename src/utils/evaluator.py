@@ -16,7 +16,7 @@ the same directory as the trained model.
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
                 seed=0, device="cpu", argmax=False,
-                num_procs=1, ignoreLTL=False, useProgression=True, gnn=None, append_h0 = False, dumb_ac = False):
+                num_procs=1, ignoreLTL=False, useProgression=True, gnn=None, dumb_ac = False):
 
         self.env = env
         self.device = device
@@ -24,7 +24,6 @@ class Eval:
         self.num_procs = num_procs
         self.ignoreLTL = ignoreLTL
         self.gnn = gnn
-        self.append_h0 = append_h0
         self.dumb_ac = dumb_ac
 
         self.model_dir = utils.get_model_dir(model_name)
@@ -42,7 +41,7 @@ class Eval:
         # Load agent
 
         agent = utils.Agent(self.env, self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train",
-                self.ignoreLTL, gnn=self.gnn, append_h0 = self.append_h0, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
+                self.ignoreLTL, gnn=self.gnn, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
         # Run agent

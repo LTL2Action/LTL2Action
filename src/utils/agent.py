@@ -12,9 +12,9 @@ class Agent:
     - to analyze the feedback (i.e. reward and done state) of its action."""
 
     def __init__(self, env, obs_space, vocab_space, action_space, model_dir, ignoreLTL,
-                gnn=False, append_h0 = False, dumb_ac = False, device=None, argmax=False, num_envs=1):
+                gnn=False, dumb_ac = False, device=None, argmax=False, num_envs=1):
         obs_space, self.preprocess_obss = utils.get_obss_preprocessor(obs_space, vocab_space, gnn)
-        self.acmodel = ACModel(env, obs_space, action_space, ignoreLTL, gnn, append_h0, dumb_ac)
+        self.acmodel = ACModel(env, obs_space, action_space, ignoreLTL, gnn, dumb_ac)
         self.device = device
         self.argmax = argmax
         self.num_envs = num_envs
