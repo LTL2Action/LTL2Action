@@ -63,3 +63,29 @@ class RGCNRoot(RGCN):
         hg = dgl.sum_nodes(g, 'h', weight='is_root')
         return self.g_embed(hg).squeeze(1)
 
+class RGCNRootShared(GNN):
+    def __init__(self, input_dim, output_dim, **kwargs):
+        super().__init__(input_dim, output_dim)
+        hidden_dim = kwargs.get('hidden_dim', 32)
+        num_layers = kwargs.get('num_layers', 2)
+
+        self.num_layers = num_layers
+        self.linear_in = nn.Linear(input_dim, hidden_dim)
+        self.conv = RelGraphConv(2*hidden_dim, hidden_dim, len(edge_types), activation=F.relu)
+        self.g_embed = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, g):
+        g = np.array(g).reshape((1, -1)).tolist()[0]
+        g = dgl.batch(g)
+        h_0 = self.linear_in(g.ndata["feat"].float())
+        h = h_0
+        etypes = g.edata["type"].float()
+
+        # Apply convolution layers
+        for i in range(self.num_layers):
+            h = self.conv(g, torch.cat([h, h_0], dim=1), etypes)
+        g.ndata['h'] = h
+
+        hg = dgl.sum_nodes(g, 'h', weight='is_root')
+        return self.g_embed(hg).squeeze(1)
+
