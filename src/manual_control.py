@@ -30,6 +30,7 @@ def reset():
 
 def step(action):
     obs, reward, done, info = ltl_env.step(action)
+    window.set_caption(ltl_env.ltl_goal)
     print('step=%s, reward=%.2f' % (base_env.step_count, reward))
 
     if done:

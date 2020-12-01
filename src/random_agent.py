@@ -10,8 +10,6 @@ import safety_gym
 from gym import wrappers, logger
 from envs.safety.safety_env import SafetyEnv
 
-from safe_rl.utils.logx import EpochLogger
-
 class RandomAgent(object):
     """This agent picks actions randomly"""
     def __init__(self, action_space):

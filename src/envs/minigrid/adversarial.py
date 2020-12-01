@@ -113,8 +113,3 @@ class AdversarialEnv9x9(AdversarialEnv):
     def __init__(self):
         super().__init__(size=9, agent_start_pos=None)
 
-
-register(
-    id='MiniGrid-Adversarial-v0',
-    entry_point='envs.minigrid.adversarial:AdversarialEnv9x9'
-)

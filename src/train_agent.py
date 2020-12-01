@@ -109,8 +109,6 @@ parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
-parser.add_argument("--append-h0", action="store_true", default=False,
-                    help="append the original h_0 for each convolution of the GNN")
 parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--pretrained-gnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
@@ -125,8 +123,6 @@ args.mem = args.recurrence > 1
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
 gnn_name = args.gnn if args.gnn else "rnn"
-if args.append_h0:
-    gnn_name = gnn_name + "-append_h0"
 if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
 if args.pretrained_rnn is not None:
@@ -210,7 +206,7 @@ txt_logger.info("Observations preprocessor loaded.\n")
 
 # Load model
 
-acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.append_h0, args.dumb_ac, args.unfreeze_ltl)
+acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.unfreeze_ltl)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")
@@ -253,7 +249,7 @@ if args.eval:
     evals = []
     for eval_sampler in eval_samplers:
         evals.append(utils.Eval(eval_env, model_name, eval_sampler,
-                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, progression_mode=progression_mode, gnn=args.gnn, append_h0 = args.append_h0, dumb_ac = args.dumb_ac))
+                    seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, progression_mode=progression_mode, gnn=args.gnn, dumb_ac = args.dumb_ac))
 
 
 # Train model

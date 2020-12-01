@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from envs.gym_letters.letter_env import LetterEnv
-from envs.gym_letters.minigrid_env import MinigridEnv
+from envs.minigrid.minigrid_env import MinigridEnv
 from gym.envs.classic_control import PendulumEnv
 
 
