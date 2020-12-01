@@ -3,6 +3,7 @@ import time
 import sys
 import numpy as np
 import glfw
+import utils
 
 import gym
 import safety_gym
@@ -15,7 +16,6 @@ class RandomAgent(object):
         self.action_space = action_space
 
     def act(self, obs):
-        # return [1, 0]
         return self.action_space.sample()
 
 class PlayAgent(object):
@@ -28,8 +28,11 @@ class PlayAgent(object):
     def __init__(self, action_space):
         self.action_space = action_space
         self.prev_act = np.array([0, 0])
+        self.last_obs = None
 
     def act(self, obs):
+        obs = obs["features"]
+
         key = obs.get('key_pressed', None)
 
         if(key == glfw.KEY_COMMA):
@@ -54,9 +57,9 @@ def run_policy(env_id, max_ep_len=None, num_episodes=100, render=True):
     # logger = EpochLogger()
     outdir = './storage/random-agent-results'
 
-    env = gym.make(env_id)
+    env = utils.make_env(env_id, "full", "Default")
+    # env = gym.make(env_id)
     env = wrappers.Monitor(env, directory=outdir, force=True)
-    env.seed(0)
 
     if ("Play" in env_id):
         agent = PlayAgent(env.action_space)
@@ -69,6 +72,7 @@ def run_policy(env_id, max_ep_len=None, num_episodes=100, render=True):
             env.render()
             time.sleep(1e-3)
 
+        env.show_text(str(o["text"]))
         a = agent.act(o)
         a = np.clip(a, env.action_space.low, env.action_space.high)
         o, r, d, info = env.step(a)
