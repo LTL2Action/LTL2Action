@@ -5,8 +5,7 @@ import dgl
 import networkx as nx
 from sklearn.preprocessing import OneHotEncoder
 
-edge_types = {k:v for (v, k) in enumerate(["self", "next", "until_1", "until_2", "and_1", "and_2", "or_1", "or_2", "eventually",
-    "always", "not", "true", "false", "prop"])}
+edge_types = {k:v for (v, k) in enumerate(["self", "arg", "arg1", "arg2"])}
 
 """
 A class that can take an LTL formula and generate the Abstract Syntax Tree (AST) of it. This
@@ -73,13 +72,13 @@ class ASTBuilder(object):
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self._get_edge_type(head, 1)) # connect the current node to the root of the left subtree
+            nxg.add_edge(1, 0, type=self._get_edge_type("arg1")) # connect the current node to the root of the left subtree
 
             index = nxg.number_of_nodes()
             r = self._to_graph(rest[1]) # build the left subtree
             r = self._shift_ids(r, index)
             nxg = nx.compose(nxg, r) # combine the left subtree with the current tree
-            nxg.add_edge(index, 0, type=self._get_edge_type(head, 2))
+            nxg.add_edge(index, 0, type=self._get_edge_type("arg2"))
             # if head in ["next", "until"]:
             #     nxg.add_edge(1, index, type=self.ASSYM_EDGE) # impose order on the operands of an assymetric operator
 
@@ -92,7 +91,7 @@ class ASTBuilder(object):
             l = self._to_graph(rest[0]) # build the left subtree
             l = self._shift_ids(l, 1)
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self._get_edge_type(head)) # connect the current node to the root of the left subtree
+            nxg.add_edge(1, 0, type=self._get_edge_type("arg")) # connect the current node to the root of the left subtree
 
             return nxg
 
