@@ -77,14 +77,6 @@ class SafetyEnv(Engine):
         ''' Helper to get the zones positions from layout '''
         return [self.data.get_body_xpos(f'zone{i}').copy() for i in range(self.zones_num)]
 
-    def _zone_pose_for_type(self, zone_type):
-        poses = []
-        for i, pose in enum(self.zones_pose):
-            if (self.zones == zone_type):
-                poses.append(pose)
-
-        return poses
-
     def build_observation_space(self):
         super().build_observation_space()
 
@@ -139,8 +131,8 @@ class SafetyEnv(Engine):
         offset = super().render_lidars()
 
         if self.render_lidar_markers:
-            if 'zones_lidar' in self.obs_space_dict:
-                for zone_type in self.zone_types:
+            for zone_type in self.zone_types:
+                if f'zones_lidar_{zone_type}' in self.obs_space_dict:
                     ind = [i for i, z in enumerate(self.zones) if (self.zones[i] == zone_type)]
                     pos_in_type = list(np.array(self.zones_pos)[ind])
 
