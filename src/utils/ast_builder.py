@@ -65,7 +65,7 @@ class ASTBuilder(object):
         rest = formula[1:]
         nxg  = nx.DiGraph()
 
-        if head in ["next", "until", "and", "or"]:
+        if head in ["until", "and", "or"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
             nxg.add_edge(0, 0, type=self._get_edge_type("self"))
 
@@ -84,7 +84,7 @@ class ASTBuilder(object):
 
             return nxg
 
-        if head in ["eventually", "always", "not"]:
+        if head in ["next", "eventually", "always", "not"]:
             nxg.add_node(0, feat=self._one_hot(head), token=head)
             nxg.add_edge(0, 0, type=self._get_edge_type("self"))
 
