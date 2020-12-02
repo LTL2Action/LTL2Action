@@ -106,6 +106,27 @@ class SequenceSampler(LTLSampler):
             return ('eventually',seq)
         return ('eventually',('and', seq[0], self._get_sequence(seq[1:])))
 
+# This generates several sequence tasks which can be accomplished in parallel. 
+# e.g. in (eventually (a and eventually c)) and (eventually b)
+# the two sequence tasks are "a->c" and "b".
+class EventuallySampler(LTLSampler):
+    def __init__(self, propositions, min_levels = 1, max_levels=4, min_conjunctions=1, max_conjunctions=3):
+        super().__init__(propositions)
+        self.conjunctions = (int(min_conjunctions), int(max_conjunctions))
+        self.sequence_sampler = SequenceSampler(propositions, min_levels, max_levels)
+
+    def sample(self):
+        conjs = random.randint(*self.conjunctions)
+        ltl = None
+
+        for i in range(conjs):
+            task = self.sequence_sampler.sample()
+            if ltl is None:
+                ltl = task
+            else:
+                ltl = ('and',task,ltl)
+        return ltl
+
 class AdversarialEnvSampler(LTLSampler):
     def sample(self):
         p = random.randint(0,1)
@@ -117,7 +138,8 @@ class AdversarialEnvSampler(LTLSampler):
 def getRegisteredSamplers(propositions):
     return [SequenceSampler(propositions),
             UntilTaskSampler(propositions),
-            DefaultSampler(propositions)]
+            DefaultSampler(propositions),
+            EventuallySampler(propositions)]
 
 # The LTLSampler factory method that instantiates the proper sampler
 # based on the @sampler_id.
@@ -140,6 +162,8 @@ def getLTLSampler(sampler_id, propositions):
         return SuperSampler(propositions)
     elif (tokens[0] == "AdversarialSampler"):
         return AdversarialEnvSampler(propositions)
+    elif (tokens[0] == "EventuallySampler"):
+        return EventuallySampler(propositions, tokens[1], tokens[2], tokens[3], tokens[4])
     else: # "Default"
         return DefaultSampler(propositions)
 
