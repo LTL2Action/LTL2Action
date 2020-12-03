@@ -112,20 +112,50 @@ class SequenceSampler(LTLSampler):
 class EventuallySampler(LTLSampler):
     def __init__(self, propositions, min_levels = 1, max_levels=4, min_conjunctions=1, max_conjunctions=3):
         super().__init__(propositions)
+        assert(len(propositions) >= 3)
         self.conjunctions = (int(min_conjunctions), int(max_conjunctions))
-        self.sequence_sampler = SequenceSampler(propositions, min_levels, max_levels)
+        self.levels = (int(min_levels), int(max_levels))
 
     def sample(self):
         conjs = random.randint(*self.conjunctions)
         ltl = None
 
         for i in range(conjs):
-            task = self.sequence_sampler.sample()
+            task = self.sample_sequence()
             if ltl is None:
                 ltl = task
             else:
                 ltl = ('and',task,ltl)
         return ltl
+
+
+    def sample_sequence(self):
+        length = random.randint(*self.levels)
+        seq = []
+
+        last = []
+        while len(seq) < length:
+            # Randomly replace some propositions with a disjunction to make more complex formulas
+            population = [p for p in self.propositions if p not in last]
+
+            if random.random() < 0.25:
+                c = random.sample(population, 2)
+            else:
+                c = random.sample(population, 1)
+
+            seq.append(c)
+            last = c
+
+        ret = self._get_sequence(seq)
+
+        return ret
+
+    def _get_sequence(self, seq):
+        term = seq[0][0] if len(seq[0]) == 1 else ('or', seq[0][0], seq[0][1])
+        if len(seq) == 1:
+            return ('eventually',term)
+        return ('eventually',('and', term, self._get_sequence(seq[1:])))
+
 
 class AdversarialEnvSampler(LTLSampler):
     def sample(self):

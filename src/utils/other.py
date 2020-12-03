@@ -29,3 +29,13 @@ def average_reward_per_step(returns, num_frames):
         avgs.append(returns[i] / num_frames[i])
 
     return numpy.mean(avgs)
+
+
+def average_discounted_return(returns, num_frames, disc):
+    discounted_returns = []
+    assert(len(returns) == len(num_frames))
+
+    for i in range(len(returns)):
+        discounted_returns.append(returns[i] * (disc ** (num_frames[i]-1)))
+
+    return numpy.mean(discounted_returns)
