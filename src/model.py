@@ -66,10 +66,10 @@ class ACModel(nn.Module, torch_ac.ACModel):
             self.word_embedding_size = 32
             self.text_embedding_size = 32
             if self.gnn_type == "GRU":
-                self.text_rnn = GRUModel(obs_space["text"], self.word_embedding_size, 32, self.text_embedding_size).to(self.device)
+                self.text_rnn = GRUModel(obs_space["text"], self.word_embedding_size, 16, self.text_embedding_size).to(self.device)
             else:
                 assert(self.gnn_type == "LSTM")
-                self.text_rnn = LSTMModel(obs_space["text"], self.word_embedding_size, 24, self.text_embedding_size).to(self.device)
+                self.text_rnn = LSTMModel(obs_space["text"], self.word_embedding_size, 16, self.text_embedding_size).to(self.device)
             print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
         
         elif self.gnn_type:
@@ -154,11 +154,11 @@ class LSTMModel(nn.Module):
         super().__init__()
         self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
         self.lstm = nn.LSTM(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
-        self.output_layer = nn.Linear(hidden_dim, text_embedding_size)
+        self.output_layer = nn.Linear(2*hidden_dim, text_embedding_size)
 
     def forward(self, text):
-        _, (hidden, _) = self.lstm(self.word_embedding(text))
-        return self.output_layer(hidden[-1])
+        hidden, _ = self.lstm(self.word_embedding(text))
+        return self.output_layer(hidden[:, -1, :])
 
 
 class GRUModel(nn.Module):
@@ -166,11 +166,11 @@ class GRUModel(nn.Module):
         super().__init__()
         self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
         self.gru = nn.GRU(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
-        self.output_layer = nn.Linear(hidden_dim, text_embedding_size)
+        self.output_layer = nn.Linear(2*hidden_dim, text_embedding_size)
 
     def forward(self, text):
-        _, (hidden, _) = self.gru(self.word_embedding(text))
-        return self.output_layer(hidden[-1])
+        hidden, _ = self.gru(self.word_embedding(text))
+        return self.output_layer(hidden[:, -1, :])
 
 
 
