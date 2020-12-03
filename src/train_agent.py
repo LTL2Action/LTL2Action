@@ -276,22 +276,24 @@ while num_frames < args.frames:
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = int(time.time() - start_time)
 
-        floored_reward = [floor(i) for i in logs["return_per_episode"]]
-        return_per_episode = utils.synthesize(floored_reward)#logs["return_per_episode"])
+        return_per_episode = utils.synthesize(logs["return_per_episode"])
         rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
+        average_reward_per_step = utils.average_reward_per_step(logs["return_per_episode"], logs["num_frames_per_episode"])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
         header = ["update", "frames", "FPS", "duration"]
         data = [update, num_frames, fps, duration]
         header += ["rreturn_" + key for key in rreturn_per_episode.keys()]
         data += rreturn_per_episode.values()
+        header += ["average_reward_per_step"]
+        data += [average_reward_per_step]
         header += ["num_frames_" + key for key in num_frames_per_episode.keys()]
         data += num_frames_per_episode.values()
         header += ["entropy", "value", "policy_loss", "value_loss", "grad_norm"]
         data += [logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"], logs["grad_norm"]]
 
         txt_logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:μσmM {:.2f} {:.2f} {:.2f} {:.2f} | F:μσmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {:.3f} | vL {:.3f} | ∇ {:.3f}"
+            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:μσmM {:.2f} {:.2f} {:.2f} {:.2f} | ARPS: {:.2f} | F:μσmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {:.3f} | vL {:.3f} | ∇ {:.3f}"
             .format(*data))
 
         header += ["return_" + key for key in return_per_episode.keys()]

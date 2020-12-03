@@ -170,17 +170,6 @@ class LTLLetterEnv(LTLEnv):
         # NOTE: The propositions must be represented by a char
         # This function must return an LTL formula for the task
         formula = self.sampler.sample()
-
-        if isinstance(self.sampler, SequenceSampler):
-            def flatten(bla):
-                output = []
-                for item in bla:
-                    output += flatten(item) if isinstance(item, tuple) else [item]
-                return output
-
-            length = flatten(formula).count("and") + 1
-            self.env.timeout = 25 # 10 * length
-
         return formula
 
 

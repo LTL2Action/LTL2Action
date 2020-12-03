@@ -19,3 +19,13 @@ def synthesize(array):
     d["min"] = numpy.amin(array)
     d["max"] = numpy.amax(array)
     return d
+
+
+def average_reward_per_step(returns, num_frames);
+    avgs = []
+    assert(len(returns) == len(num_frames))
+
+    for i in range(len(returns)):
+        avgs.append(returns[i] / num_frames[i])
+
+    return numpy.mean(avgs)
