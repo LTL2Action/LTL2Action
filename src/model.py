@@ -94,11 +94,13 @@ class ACModel(nn.Module, torch_ac.ACModel):
             )
         else:
             # Define actor's model
-            self.actor = PolicyNetwork(self.embedding_size, self.action_space, hiddens=[64], activation=nn.ReLU())
+            self.actor = PolicyNetwork(self.embedding_size, self.action_space, hiddens=[64, 64, 64], activation=nn.ReLU())
 
             # Define critic's model
             self.critic = nn.Sequential(
                 nn.Linear(self.embedding_size, 64),
+                nn.Tanh(),
+                nn.Linear(64, 64),
                 nn.Tanh(),
                 nn.Linear(64, 1)
             )
