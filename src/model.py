@@ -34,7 +34,7 @@ def init_params(m):
 
 
 class ACModel(nn.Module, torch_ac.ACModel):
-    def __init__(self, env, obs_space, action_space, ignoreLTL, gnn_type, dumb_ac, unfreeze_ltl):
+    def __init__(self, env, obs_space, action_space, ignoreLTL, gnn_type, dumb_ac, freeze_ltl):
         super().__init__()
 
         # Decide which components are enabled
@@ -45,8 +45,9 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.action_space = action_space
         self.dumb_ac = dumb_ac
 
-        self.freeze_pretrained_params = not unfreeze_ltl
-        print("Frozen LTL module" if self.freeze_pretrained_params else "Unfrozen LTL module")
+        self.freeze_pretrained_params = freeze_ltl
+        if self.freeze_pretrained_params:
+            print("Freezing the LTL module.")
 
         self.env_model = getEnvModel(env, obs_space)
 

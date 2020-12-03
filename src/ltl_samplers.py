@@ -156,13 +156,13 @@ def getLTLSampler(sampler_id, propositions):
         return OrSampler(propositions, sampler_ids)
     elif (tokens[0] == "Sequence"):
         return SequenceSampler(propositions, tokens[1], tokens[2])
-    elif (tokens[0] == "UntilTasks"):
+    elif (tokens[0] == "Until"):
         return UntilTaskSampler(propositions, tokens[1], tokens[2], tokens[3], tokens[4])
     elif (tokens[0] == "SuperSampler"):
         return SuperSampler(propositions)
-    elif (tokens[0] == "AdversarialSampler"):
+    elif (tokens[0] == "Adversarial"):
         return AdversarialEnvSampler(propositions)
-    elif (tokens[0] == "EventuallySampler"):
+    elif (tokens[0] == "Eventually"):
         return EventuallySampler(propositions, tokens[1], tokens[2], tokens[3], tokens[4])
     else: # "Default"
         return DefaultSampler(propositions)

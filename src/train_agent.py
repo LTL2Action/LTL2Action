@@ -112,7 +112,7 @@ parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic
 parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--pretrained-gnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
-parser.add_argument("--unfreeze-ltl", action="store_true", default=False,help="Un-freeze the gradient updates of the LTL module")
+parser.add_argument("--freeze-ltl", action="store_true", default=False,help="Freeze the gradient updates of the LTL module")
 
 args = parser.parse_args()
 
@@ -127,10 +127,10 @@ if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
 if args.pretrained_rnn is not None:
     gnn_name = gnn_name + "-pretrained"
-if args.unfreeze_ltl:
-    gnn_name = gnn_name + "-unfreeze_ltl"
+if args.freeze_ltl:
+    gnn_name = gnn_name + "-freeze_ltl"
 
-default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}_progression:{args.progression_mode}"
+default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}_prog:{args.progression_mode}"
 
 model_name = args.model or default_model_name
 storage_dir = "storage" if args.checkpoint_dir is None else args.checkpoint_dir
@@ -206,7 +206,7 @@ txt_logger.info("Observations preprocessor loaded.\n")
 
 # Load model
 
-acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.unfreeze_ltl)
+acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.freeze_ltl)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")
