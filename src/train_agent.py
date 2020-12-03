@@ -107,9 +107,8 @@ parser.add_argument("--progression-mode", default="full",
                     help="the agent always receives the original LTL formula (without LTL progression)")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
-parser.add_argument("--gnn", default=None, help="use gnn to model the LTL (only if ignoreLTL==True)")
+parser.add_argument("--gnn", default="RGCN_8x32_ROOT_SHARED", help="use gnn to model the LTL (only if ignoreLTL==True)")
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
-parser.add_argument("--pretrained-rnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--pretrained-gnn", default=None,help="name of the model to be pre-loaded")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
 parser.add_argument("--freeze-ltl", action="store_true", default=False,help="Freeze the gradient updates of the LTL module")
@@ -122,10 +121,10 @@ args.mem = args.recurrence > 1
 
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
-gnn_name = args.gnn if args.gnn else "rnn"
+gnn_name = args.gnn
 if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
-if args.pretrained_rnn is not None:
+if args.pretrained_gnn is not None:
     gnn_name = gnn_name + "-pretrained"
 if args.freeze_ltl:
     gnn_name = gnn_name + "-freeze_ltl"
@@ -138,14 +137,7 @@ model_dir = utils.get_model_dir(model_name, storage_dir)
 
 pretrained_model_dir = None
 
-if args.pretrained_rnn:
-    assert(args.pretrained_gnn is None)
-    assert(args.gnn is None)
-    pretrained_model_dir = utils.get_model_dir(args.pretrained_rnn)
-
 if args.pretrained_gnn:
-    assert(args.pretrained_rnn is None)
-    assert(args.gnn is not None)
     pretrained_model_dir = utils.get_model_dir(args.pretrained_gnn)
 # Load loggers and Tensorboard writer
 
@@ -199,7 +191,8 @@ if pretrained_model_dir is not None:
         exit(1)
 
 # Load observations preprocessor
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), args.gnn != None, progression_mode)
+using_gnn = (args.gnn != "GRU" and args.gnn != "LSTM")
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), using_gnn, progression_mode)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded.\n")
@@ -211,13 +204,9 @@ if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")
 
-if args.pretrained_rnn:
-    acmodel.load_pretrained_rnn(pretrained_status["model_state"])
-    txt_logger.info("Pretrained RNN loaded.\n")
-
 if args.pretrained_gnn:
     acmodel.load_pretrained_gnn(pretrained_status["model_state"])
-    txt_logger.info("Pretrained GNN loaded.\n")
+    txt_logger.info("Pretrained model loaded.\n")
 
 acmodel.to(device)
 txt_logger.info("Model loaded.\n")

@@ -21,7 +21,7 @@ def synthesize(array):
     return d
 
 
-def average_reward_per_step(returns, num_frames);
+def average_reward_per_step(returns, num_frames):
     avgs = []
     assert(len(returns) == len(num_frames))
 

@@ -39,7 +39,7 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         # Decide which components are enabled
         self.use_progression_info = "progress_info" in obs_space
-        self.use_text = not ignoreLTL and not gnn_type and "text" in obs_space
+        self.use_text = not ignoreLTL and (gnn_type == "GRU" or gnn_type == "LSTM") and "text" in obs_space
         self.gnn_type = gnn_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_space = action_space
@@ -65,9 +65,13 @@ class ACModel(nn.Module, torch_ac.ACModel):
         elif self.use_text:
             self.word_embedding_size = 32
             self.text_embedding_size = 32
-            hidden_dim = 24
-            self.text_rnn = SequenceModel(obs_space["text"], self.word_embedding_size, hidden_dim, self.text_embedding_size).to(self.device)
+            if self.gnn_type == "GRU":
+                self.text_rnn = GRUModel(obs_space["text"], self.word_embedding_size, 32, self.text_embedding_size).to(self.device)
+            else:
+                assert(self.gnn_type == "LSTM")
+                self.text_rnn = LSTMModel(obs_space["text"], self.word_embedding_size, 24, self.text_embedding_size).to(self.device)
             print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
+        
         elif self.gnn_type:
             hidden_dim = 32
             self.text_embedding_size = 32
@@ -128,22 +132,6 @@ class ACModel(nn.Module, torch_ac.ACModel):
 
         return dist, value
 
-    def load_pretrained_rnn(self, model_state):
-
-        # We delete all keys relating to the actor/critic.
-        # We only wish to load the `word_embedding` and `text_rnn` parameters in new_model_state.
-        new_model_state = model_state.copy()
-
-        for key in model_state.keys():
-            if key.find("actor") != -1 or key.find("critic") != -1:
-                del new_model_state[key]
-
-        self.load_state_dict(new_model_state, strict=False)
-
-        if self.freeze_pretrained_params:
-            for param in self.text_rnn.parameters():
-                param.requires_grad = False
-
     def load_pretrained_gnn(self, model_state):
         # We delete all keys relating to the actor/critic.
         new_model_state = model_state.copy()
@@ -155,11 +143,13 @@ class ACModel(nn.Module, torch_ac.ACModel):
         self.load_state_dict(new_model_state, strict=False)
 
         if self.freeze_pretrained_params:
-            for param in self.gnn.parameters():
+            target = self.text_rnn if self.gnn_type == "GRU" or self.gnn_type == "LSTM" else self.gnn
+
+            for param in target.parameters():
                 param.requires_grad = False
 
 
-class SequenceModel(nn.Module):
+class LSTMModel(nn.Module):
     def __init__(self, obs_size, word_embedding_size=32, hidden_dim=32, text_embedding_size=32):
         super().__init__()
         self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
@@ -171,10 +161,16 @@ class SequenceModel(nn.Module):
         return self.output_layer(hidden[-1])
 
 
+class GRUModel(nn.Module):
+    def __init__(self, obs_size, word_embedding_size=32, hidden_dim=32, text_embedding_size=32):
+        super().__init__()
+        self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
+        self.gru = nn.GRU(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
+        self.output_layer = nn.Linear(hidden_dim, text_embedding_size)
 
-
-
-
+    def forward(self, text):
+        _, (hidden, _) = self.gru(self.word_embedding(text))
+        return self.output_layer(hidden[-1])
 
 
 
