@@ -15,83 +15,92 @@ import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_ac
 
+from gym.spaces import Box, Discrete
+
 from gnns.graphs.GCN import *
 from gnns.graphs.GNN import GNNMaker
 
-# Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
-def init_params(m):
-    classname = m.__class__.__name__
-    if classname.find("Linear") != -1:
-        m.weight.data.normal_(0, 1)
-        m.weight.data *= 1 / torch.sqrt(m.weight.data.pow(2).sum(1, keepdim=True))
-        if m.bias is not None:
-            m.bias.data.fill_(0)
+from env_model import getEnvModel
+from policy_network import PolicyNetwork
+from model import LSTMModel, GRUModel, init_params
 
 
-class ACModel(nn.Module, torch_ac.RecurrentACModel):
-    def __init__(self, obs_space, action_space, ignoreLTL, use_memory, gnn_type, append_h0):
+
+class RecurrentACModel(nn.Module, torch_ac.RecurrentACModel):
+    def __init__(self, env, obs_space, action_space, ignoreLTL, gnn_type, dumb_ac, freeze_ltl):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_text = not ignoreLTL and not gnn_type
-        self.use_memory = False
+        self.use_progression_info = "progress_info" in obs_space
+        self.use_text = not ignoreLTL and (gnn_type == "GRU" or gnn_type == "LSTM") and "text" in obs_space
         self.gnn_type = gnn_type
-        self.append_h0 = append_h0
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_space = action_space
+        self.dumb_ac = dumb_ac
 
-        # Define image embedding
-        if "image" in obs_space.keys():
-            n = obs_space["image"][0]
-            m = obs_space["image"][1]
-            k = obs_space["image"][2]
-            self.image_conv = nn.Sequential(
-                nn.Conv2d(k, 16, (2, 2)),
-                nn.ReLU(),
-                nn.Conv2d(16, 32, (2, 2)),
-                nn.ReLU(),
-                nn.Conv2d(32, 64, (2, 2)),
-                nn.ReLU()
-            )
-            #self.image_embedding_size = ((n-1)//2-2)*((m-1)//2-2)*64
-            self.image_embedding_size = (n-3)*(m-3)*64
-        else:
-            self.image_embedding_size = 0
+        self.freeze_pretrained_params = freeze_ltl
+        if self.freeze_pretrained_params:
+            print("Freezing the LTL module.")
 
-        # Define memory
-        if self.use_memory:
-            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
+        self.env_model = getEnvModel(env, obs_space)
 
         # Define text embedding
-        if self.use_text:
+        if self.use_progression_info:
+            self.text_embedding_size = 32
+            self.simple_encoder = nn.Sequential(
+                nn.Linear(obs_space["progress_info"], 64),
+                nn.Tanh(),
+                nn.Linear(64, self.text_embedding_size),
+                nn.Tanh()
+            ).to(self.device)
+            print("Linear encoder Number of parameters:", sum(p.numel() for p in self.simple_encoder.parameters() if p.requires_grad))
+
+        elif self.use_text:
             self.word_embedding_size = 32
-            self.word_embedding = nn.Embedding(obs_space["text"], self.word_embedding_size)
-            self.text_embedding_size = 128
-            self.text_rnn = nn.GRU(self.word_embedding_size, self.text_embedding_size, batch_first=True)
-
-        if self.gnn_type:
+            self.text_embedding_size = 32
+            if self.gnn_type == "GRU":
+                self.text_rnn = GRUModel(obs_space["text"], self.word_embedding_size, 16, self.text_embedding_size).to(self.device)
+            else:
+                assert(self.gnn_type == "LSTM")
+                self.text_rnn = LSTMModel(obs_space["text"], self.word_embedding_size, 16, self.text_embedding_size).to(self.device)
+            print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
+        
+        elif self.gnn_type:
             hidden_dim = 32
-            self.text_embedding_size = 128
-            self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size, self.append_h0).to(self.device)
+            self.text_embedding_size = 32
+            self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size).to(self.device)
+            print("GNN Number of parameters:", sum(p.numel() for p in self.gnn.parameters() if p.requires_grad))
 
-        # Resize image embedding
+
+        # Memory specific code. 
+        self.image_embedding_size = self.env_model.size()
+        self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
         self.embedding_size = self.semi_memory_size
-        if self.use_text or self.gnn_type:
+
+        print("embedding size:", self.embedding_size)
+        if self.use_text or self.gnn_type or self.use_progression_info:
             self.embedding_size += self.text_embedding_size
 
-        # Define actor's model
-        self.actor = nn.Sequential(
-            nn.Linear(self.embedding_size, 64),
-            nn.Tanh(),
-            nn.Linear(64, self.action_space.n)
-        )
+        if self.dumb_ac:
+            # Define actor's model
+            self.actor = PolicyNetwork(self.embedding_size, self.action_space)
 
-        # Define critic's model
-        self.critic = nn.Sequential(
-            nn.Linear(self.embedding_size, 64),
-            nn.Tanh(),
-            nn.Linear(64, 1)
-        )
+            # Define critic's model
+            self.critic = nn.Sequential(
+                nn.Linear(self.embedding_size, 1)
+            )
+        else:
+            # Define actor's model
+            self.actor = PolicyNetwork(self.embedding_size, self.action_space, hiddens=[64, 64, 64], activation=nn.ReLU())
+
+            # Define critic's model
+            self.critic = nn.Sequential(
+                nn.Linear(self.embedding_size, 64),
+                nn.Tanh(),
+                nn.Linear(64, 64),
+                nn.Tanh(),
+                nn.Linear(64, 1)
+            )
 
         # Initialize parameters correctly
         self.apply(init_params)
@@ -105,35 +114,29 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
         return self.image_embedding_size
 
     def forward(self, obs, memory):
-        embedding = None 
+        x = self.env_model(obs)
 
-        if "image" in obs.keys():
-            x = obs.image.transpose(1, 3).transpose(2, 3)
-            x = self.image_conv(x)
-            x = x.reshape(x.shape[0], -1)
-
-            # Image
-            if self.use_memory:
-                hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
-                hidden = self.memory_rnn(x, hidden)
-                embedding = hidden[0]
-                memory = torch.cat(hidden, dim=1)
-            else:
-                embedding = x
+        hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
+        hidden = self.memory_rnn(x, hidden)
+        embedding = hidden[0]
+        memory = torch.cat(hidden, dim=1)
+            
+        if self.use_progression_info:
+            embed_ltl = self.simple_encoder(obs.progress_info)
+            embedding = torch.cat((embedding, embed_ltl), dim=1) if embedding is not None else embed_ltl
 
         # Adding Text
-        if self.use_text:
-            embed_text = self._get_embed_text(obs.text)
-            embedding = torch.cat((embedding, embed_text), dim=1) if embedding != None else embed_text
+        elif self.use_text:
+            embed_text = self.text_rnn(obs.text)
+            embedding = torch.cat((embedding, embed_text), dim=1) if embedding is not None else embed_text
 
         # Adding GNN
-        if self.gnn_type:
+        elif self.gnn_type:
             embed_gnn = self.gnn(obs.text)
-            embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding != None else embed_gnn
+            embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding is not None else embed_gnn
 
         # Actor
-        x = self.actor(embedding)
-        dist = Categorical(logits=F.log_softmax(x, dim=1))
+        dist = self.actor(embedding)
 
         # Critic
         x = self.critic(embedding)
@@ -141,6 +144,20 @@ class ACModel(nn.Module, torch_ac.RecurrentACModel):
 
         return dist, value, memory
 
-    def _get_embed_text(self, text):
-        _, hidden = self.text_rnn(self.word_embedding(text))
-        return hidden[-1]
+
+    def load_pretrained_gnn(self, model_state):
+        # We delete all keys relating to the actor/critic.
+        new_model_state = model_state.copy()
+
+        for key in model_state.keys():
+            if key.find("actor") != -1 or key.find("critic") != -1:
+                del new_model_state[key]
+
+        self.load_state_dict(new_model_state, strict=False)
+
+        if self.freeze_pretrained_params:
+            target = self.text_rnn if self.gnn_type == "GRU" or self.gnn_type == "LSTM" else self.gnn
+
+            for param in target.parameters():
+                param.requires_grad = False
+

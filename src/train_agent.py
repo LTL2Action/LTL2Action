@@ -37,6 +37,7 @@ from math import floor
 
 import utils
 from model import ACModel
+from recurrent_model import RecurrentACModel
 from envs.gym_letters.letter_env import LetterEnv
 
 # Parse arguments
@@ -104,7 +105,7 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
 parser.add_argument("--progression-mode", default="full",
-                    help="the agent always receives the original LTL formula (without LTL progression)")
+                    help="Full: uses LTL progression; partial: shows the propositions which progress or falsify the formula; none: only original formula is seen. ")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", default="RGCN_8x32_ROOT_SHARED", help="use gnn to model the LTL (only if ignoreLTL==True)")
@@ -115,7 +116,7 @@ parser.add_argument("--freeze-ltl", action="store_true", default=False,help="Fre
 
 args = parser.parse_args()
 
-args.mem = args.recurrence > 1
+use_mem = args.recurrence > 1
 
 # Set run dir
 
@@ -128,6 +129,8 @@ if args.pretrained_gnn is not None:
     gnn_name = gnn_name + "-pretrained"
 if args.freeze_ltl:
     gnn_name = gnn_name + "-freeze_ltl"
+if use_mem:
+    gnn_name = gnn_name + "-recurrence:%d"%(args.recurrence)
 
 default_model_name = f"{gnn_name}_{args.ltl_sampler}_{args.env}_seed:{args.seed}_epochs:{args.epochs}_bs:{args.batch_size}_fpp:{args.frames_per_proc}_dsc:{args.discount}_lr:{args.lr}_ent:{args.entropy_coef}_clip:{args.clip_eps}_prog:{args.progression_mode}"
 
@@ -198,8 +201,10 @@ if "vocab" in status:
 txt_logger.info("Observations preprocessor loaded.\n")
 
 # Load model
-
-acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.freeze_ltl)
+if use_mem:
+    acmodel = RecurrentACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.freeze_ltl)
+else:
+    acmodel = ACModel(envs[0].env, obs_space, envs[0].action_space, args.ignoreLTL, args.gnn, args.dumb_ac, args.freeze_ltl)
 if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")
