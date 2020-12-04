@@ -90,8 +90,8 @@ parser.add_argument("--lr", type=float, default=0.0003,
                     help="learning rate (default: 0.0003)")
 parser.add_argument("--gae-lambda", type=float, default=0.95,
                     help="lambda coefficient in GAE formula (default: 0.95, 1 means no gae)")
-parser.add_argument("--entropy-coef", type=float, default=0.003,
-                    help="entropy term coefficient (default: 0.003)")
+parser.add_argument("--entropy-coef", type=float, default=0.01,
+                    help="entropy term coefficient (default: 0.01)")
 parser.add_argument("--value-loss-coef", type=float, default=0.5,
                     help="value loss term coefficient (default: 0.5)")
 parser.add_argument("--max-grad-norm", type=float, default=0.5,
