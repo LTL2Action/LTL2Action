@@ -10,9 +10,6 @@ import envs.gym_letters
 import ltl_wrappers
 
 def make_env(env_key, progression_mode, ltl_sampler, seed=None, intrinsic=0, ignoreLTL=False):
-    """
-    Only support for letter envs for now
-    """
     env = gym.make(env_key)
     env.seed(seed)
 
@@ -20,4 +17,4 @@ def make_env(env_key, progression_mode, ltl_sampler, seed=None, intrinsic=0, ign
     if (ignoreLTL):
         return ltl_wrappers.IgnoreLTLWrapper(env)
     else:
-        return ltl_wrappers.LTLLetterEnv(env, progression_mode, ltl_sampler, intrinsic)
+        return ltl_wrappers.LTLEnv(env, progression_mode, ltl_sampler, intrinsic)

@@ -107,7 +107,7 @@ args = parser.parse_args()
 # `ltl_env` is the (2-level) wrapped minigrid with LTL goals
 env = gym.make(args.env)
 base_env = env.env
-ltl_env = ltl_wrappers.LTLLetterEnv(env, progression_mode="full", ltl_sampler="AdversarialSampler")
+ltl_env = ltl_wrappers.LTLEnv(env, progression_mode="full", ltl_sampler="AdversarialSampler")
 
 window = Window('gym_minigrid - ' + args.env)
 window.reg_key_handler(key_handler)

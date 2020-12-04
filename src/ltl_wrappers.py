@@ -1,10 +1,11 @@
 """
-These are simple wrappers that will include LTL goals to any given environment.
+This is a simple wrapper that will include LTL goals to any given environment.
 It also progress the formulas as the agent interacts with the envirionment.
 
 However, each environment must implement the followng functions:
     - *get_events(...)*: Returns the propositions that currently hold on the environment.
-    - *sample_ltl_goal(...)*: Returns a new (randomly generated) LTL goal for the episode.
+    - *get_propositions(...)*: Maps the objects in the environment to a set of
+                            propositions that can be referred to in LTL.
 
 Notes about LTLEnv:
     - The episode ends if the LTL goal is progressed to True or False.
@@ -21,7 +22,7 @@ import ltl_progression, random
 from ltl_samplers import getLTLSampler, SequenceSampler
 
 class LTLEnv(gym.Wrapper):
-    def __init__(self, env, progression_mode="full", intrinsic=0.0):
+    def __init__(self, env, progression_mode="full", ltl_sampler=None, intrinsic=0.0):
         """
         LTL environment
         --------------------
@@ -39,9 +40,13 @@ class LTLEnv(gym.Wrapper):
         """
         super().__init__(env)
         self.progression_mode   = progression_mode
+        self.propositions = self.env.get_propositions()
+        self.sampler = getLTLSampler(ltl_sampler, self.propositions)
+
         self.observation_space = spaces.Dict({'features': env.observation_space})
         self.known_progressions = {}
         self.intrinsic = intrinsic
+
 
     def sample_ltl_goal(self):
         # This function must return an LTL formula for the task
@@ -133,6 +138,30 @@ class LTLEnv(gym.Wrapper):
                 X[i] = 1.
         return X
 
+    def sample_ltl_goal(self):
+        # NOTE: The propositions must be represented by a char
+        # This function must return an LTL formula for the task
+        formula = self.sampler.sample()
+
+        if isinstance(self.sampler, SequenceSampler):
+            def flatten(bla):
+                output = []
+                for item in bla:
+                    output += flatten(item) if isinstance(item, tuple) else [item]
+                return output
+
+            length = flatten(formula).count("and") + 1
+            self.env.timeout = 25 # 10 * length
+
+        return formula
+
+
+    def get_events(self, obs, act, next_obs):
+        # This function must return the events that currently hold on the environment
+        # NOTE: The events are represented by a string containing the propositions with positive values only (e.g., "ac" means that only propositions 'a' and 'b' hold)
+        return self.env.get_events()
+
+
 class IgnoreLTLWrapper(gym.Wrapper):
     def __init__(self, env):
         """
@@ -158,23 +187,3 @@ class IgnoreLTLWrapper(gym.Wrapper):
 
     def get_propositions(self):
         return list([])
-
-
-class LTLLetterEnv(LTLEnv):
-    def __init__(self, env, progression_mode="full", ltl_sampler=None, intrinsic=0.0):
-        super().__init__(env, progression_mode, intrinsic)
-        self.propositions = self.env.get_propositions()
-        self.sampler = getLTLSampler(ltl_sampler, self.propositions)
-
-    def sample_ltl_goal(self):
-        # NOTE: The propositions must be represented by a char
-        # This function must return an LTL formula for the task
-        formula = self.sampler.sample()
-        return formula
-
-
-    def get_events(self, obs, act, next_obs):
-        # This function must return the events that currently hold on the environment
-        # NOTE: The events are represented by a string containing the propositions with positive values only (e.g., "ac" means that only propositions 'a' and 'b' hold)
-        return self.env.get_events()
-

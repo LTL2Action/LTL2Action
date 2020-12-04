@@ -1,7 +1,7 @@
 """
-This code uses the OpenAI baselines to learn the policies. 
+This code uses the OpenAI baselines to learn the policies.
 However, the current implementation ignores the LTL formula.
-I left this code here as a reference and for debugging purposes. 
+I left this code here as a reference and for debugging purposes.
 """
 
 try:
@@ -27,13 +27,13 @@ def make_env(env_id, mpi_rank=0, subrank=0, seed=None, logger_dir=None, initiali
     env = gym.make(env_id)
 
     # Adding general wraps
-    env = ltl_wrappers.LTLLetterEnv(env)
+    env = ltl_wrappers.LTLEnv(env)
     env = ltl_wrappers.IgnoreLTLWrapper(env) # For testing purposes
 
     env.seed(seed + subrank if seed is not None else None)
     env = bench.Monitor(env,
                         logger_dir and os.path.join(logger_dir, str(mpi_rank) + '.' + str(subrank)),
-                        allow_early_resets=True)    
+                        allow_early_resets=True)
 
     return env
 
@@ -78,13 +78,13 @@ def build_env(env_id, agent, force_dummy=False, num_env=None, seed=None):
     return env
 
 def learn_letters(agent, env):
-    if agent == "dqn":        
+    if agent == "dqn":
         model = deepq.learn(
             env,
             "mlp", num_layers=4, num_hidden=128, activation=tf.tanh, # tf.nn.relu
             hiddens=[128],
             dueling=True,
-            lr=1e-5, 
+            lr=1e-5,
             total_timesteps=int(1e7),
             buffer_size=100000,
             batch_size=32,
@@ -97,11 +97,11 @@ def learn_letters(agent, env):
             print_freq=50
         )
 
-    elif "ppo" in agent:        
+    elif "ppo" in agent:
         mlp_net = get_network_builder("mlp")(num_layers=5, num_hidden=128, activation=tf.tanh) # tf.nn.relu
         ppo_params = dict(
-            nsteps=128, 
-            ent_coef=0.01, 
+            nsteps=128,
+            ent_coef=0.01,
             vf_coef=0.5,
             max_grad_norm=0.5,
             lr=1e-4,
@@ -121,12 +121,12 @@ def learn_letters(agent, env):
         else:
             # Using a standard MLP
             ppo_params["network"] = mlp_net
-        
+
         timesteps=int(1e9)
-        
+
         model = ppo2.learn(
-            env=env, 
-            total_timesteps=timesteps, 
+            env=env,
+            total_timesteps=timesteps,
             **ppo_params
         )
     else:
@@ -154,7 +154,7 @@ def run_agent(agent, env_id, run_id):
 
 
 if __name__ == '__main__':
-    
+
     agent  = 'ppo'
     env_id = 'Letter-4x4-v0'
     run_id = 0

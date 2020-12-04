@@ -75,9 +75,9 @@ register(
 
 ### Safety Envs
 register(
-    id='Safety-Test-v0',
-    entry_point='envs.safety.safety_env:SafetyEnv')
+    id='Zones-v0',
+    entry_point='envs.safety.zones_env:ZonesEnv5')
 
 register(
-    id='Safety-Play-v0',
-    entry_point='envs.safety.safety_env:PlayEnv')
+    id='Zones-v1',
+    entry_point='envs.safety.zones_env:ZonesEnv5Fixed')

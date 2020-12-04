@@ -7,8 +7,9 @@ import utils
 
 import gym
 import safety_gym
+import ltl_wrappers
 from gym import wrappers, logger
-from envs.safety.safety_env import SafetyEnv
+from envs.safety import safety_wrappers
 
 class RandomAgent(object):
     """This agent picks actions randomly"""
@@ -57,14 +58,13 @@ def run_policy(env_id, max_ep_len=None, num_episodes=100, render=True):
     # logger = EpochLogger()
     outdir = './storage/random-agent-results'
 
-    env = utils.make_env(env_id, "full", "Default")
-    # env = gym.make(env_id)
+    env = gym.make(env_id)
+    env.num_steps = 10000000
+    env = safety_wrappers.Play(env)
+    env = ltl_wrappers.LTLEnv(env, ltl_sampler="Default")
     env = wrappers.Monitor(env, directory=outdir, force=True)
 
-    if ("Play" in env_id):
-        agent = PlayAgent(env.action_space)
-    else:
-        agent = RandomAgent(env.action_space)
+    agent = PlayAgent(env.action_space)
 
     o, r, d, ep_ret, ep_cost, ep_len, n = env.reset(), 0, False, 0, 0, 0, 0
     while n < num_episodes:

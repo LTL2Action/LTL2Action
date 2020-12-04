@@ -1,11 +1,8 @@
 import numpy as np
-import random
 import enum
-import glfw
 import gym
 
 from safety_gym.envs.engine import Engine
-from mujoco_py import MjViewer, const
 
 class zone(enum.Enum):
     JetBlack = 0
@@ -25,7 +22,7 @@ class zone(enum.Enum):
 
 GROUP_ZONE = 7
 
-class SafetyEnv(Engine):
+class ZonesEnv(Engine):
     """
     This environment is a modification of the Safety-Gym's environment.
     There is no "goal circle" but rather a collection of zones that the
@@ -147,6 +144,15 @@ class SafetyEnv(Engine):
 
         return super().reset()
 
+
+
+class LTLZonesEnv(ZonesEnv):
+    def __init__(self, zones:list, use_fixed_map:float, timeout:int):
+        super().__init__(zones=zones, use_fixed_map=use_fixed_map, timeout=timeout, config={})
+
+    def get_propositions(self):
+        return [str(i) for i in self.zone_types]
+
     def get_events(self):
         events = ""
         for h_inedx, h_pos in enumerate(self.zones_pos):
@@ -157,64 +163,12 @@ class SafetyEnv(Engine):
 
         return events
 
-    def get_propositions(self):
-        return [str(i) for i in self.zone_types]
+
+class ZonesEnv5(LTLZonesEnv):
+    def __init__(self):
+        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.White, zone.Yellow], use_fixed_map=False, timeout=1000)
 
 
-
-
-class PlayEnv(SafetyEnv):
-    def __init__(self, zones=[zone.Blue, zone.Blue, zone.Green, zone.Red, zone.Yellow], use_fixed_map=False, timeout=10000, config={}):
-        super().__init__(zones, use_fixed_map, timeout, config)
-
-    def show_text(self, text):
-        self.viewer.show_text(text)
-
-    def render(self, mode='human'):
-        if self.viewer is None:
-            self._old_render_mode = 'human'
-            self.viewer = CustomViewer(self.sim)
-            self.viewer.cam.fixedcamid = -1
-            self.viewer.cam.type = const.CAMERA_FREE
-
-            self.viewer.render_swap_callback = self.render_swap_callback
-            # Turn all the geom groups on
-            self.viewer.vopt.geomgroup[:] = 1
-            self._old_render_mode = mode
-
-        super().render()
-
-    def obs(self):
-        obs = super().obs()
-
-        if not self.viewer is None:
-            obs['key_pressed'] = self.viewer.consume_key()
-
-        return obs
-
-
-class CustomViewer(MjViewer):
-    def __init__(self, sim):
-        super().__init__(sim)
-        self.key_pressed = None
-        self.custom_text = None
-
-    def show_text(self, text):
-        self.custom_text = text
-
-    def consume_key(self):
-        ret = self.key_pressed
-        self.key_pressed = None
-
-        return ret
-
-    def key_callback(self, window, key, scancode, action, mods):
-        self.key_pressed = key
-        if action == glfw.RELEASE:
-            self.key_pressed = -1
-
-        super().key_callback(window, key, scancode, action, mods)
-
-    def _create_full_overlay(self):
-        if (self.custom_text): self.add_overlay(const.GRID_TOPRIGHT, self.custom_text, "")
-        super()._create_full_overlay()
+class ZonesEnv5Fixed(LTLZonesEnv):
+    def __init__(self):
+        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.White, zone.Yellow], use_fixed_map=True, timeout=1000)
