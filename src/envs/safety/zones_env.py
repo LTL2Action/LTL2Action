@@ -60,7 +60,6 @@ class ZonesEnv(Engine):
             'robot_base': 'xmls/point.xml',
             'task': 'none',
             'lidar_num_bins': 8,
-            'observation_flatten': False,
             'observe_zones': True,
             'zones_num': len(zones),
             'num_steps': timeout
@@ -147,8 +146,8 @@ class ZonesEnv(Engine):
 
 
 class LTLZonesEnv(ZonesEnv):
-    def __init__(self, zones:list, use_fixed_map:float, timeout:int):
-        super().__init__(zones=zones, use_fixed_map=use_fixed_map, timeout=timeout, config={})
+    def __init__(self, zones:list, use_fixed_map:float, timeout:int, config={}):
+        super().__init__(zones=zones, use_fixed_map=use_fixed_map, timeout=timeout, config=config)
 
     def get_propositions(self):
         return [str(i) for i in self.zone_types]
@@ -163,11 +162,20 @@ class LTLZonesEnv(ZonesEnv):
 
         return events
 
+class ZonesEnv1(LTLZonesEnv):
+    def __init__(self):
+        super().__init__(zones=[zone.Red], use_fixed_map=False, timeout=1000, config=config)
+
+class ZonesEnv1Fixed(LTLZonesEnv):
+    def __init__(self):
+        config = {
+            # 'placements_extents': [-1.5, -1.5, 1.5, 1.5]
+        }
+        super().__init__(zones=[zone.Red], use_fixed_map=True, timeout=1000, config=config)
 
 class ZonesEnv5(LTLZonesEnv):
     def __init__(self):
         super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.White, zone.Yellow], use_fixed_map=False, timeout=1000)
-
 
 class ZonesEnv5Fixed(LTLZonesEnv):
     def __init__(self):

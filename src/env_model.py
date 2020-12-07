@@ -1,17 +1,19 @@
 import torch
 import torch.nn as nn
 
-from envs.gym_letters.letter_env import LetterEnv
-from envs.minigrid.minigrid_env import MinigridEnv
+from envs import *
 from gym.envs.classic_control import PendulumEnv
 
 
 def getEnvModel(env, obs_space):
     env = env.unwrapped
+
     if isinstance(env, LetterEnv):
         return LetterEnvModel(obs_space)
     if isinstance(env, MinigridEnv):
         return MinigridEnvModel(obs_space)
+    if isinstance(env, ZonesEnv):
+        return ZonesEnvModel(obs_space)
     if isinstance(env, PendulumEnv):
         return PendulumEnvModel(obs_space)
     # Add your EnvModel here...
@@ -99,6 +101,27 @@ class MinigridEnvModel(EnvModel):
 
         return super().forward(obs)
 
+class ZonesEnvModel(EnvModel):
+    def __init__(self, obs_space):
+        super().__init__(obs_space)
+
+        if "image" in obs_space.keys():
+            n = obs_space["image"][0]
+            lidar_num_bins = 8
+            self.embedding_size = (n-12)//lidar_num_bins + 4
+            self.net_ = nn.Sequential(
+                nn.Linear(n, 2*n),
+                nn.Tanh(),
+                nn.Linear(2*n, self.embedding_size),
+                nn.Tanh()
+            )
+            # embedding_size = number of propositional lidars + 4 normal sensors
+
+    def forward(self, obs):
+        if "image" in obs.keys():
+            return self.net_(obs.image)
+
+        return super().forward(obs)
 
 class PendulumEnvModel(EnvModel):
     def __init__(self, obs_space):

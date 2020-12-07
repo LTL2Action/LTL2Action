@@ -13,6 +13,7 @@ class Play(gym.Wrapper):
     def __init__(self, env):
         super().__init__(env)
         self.env = env
+        self.env.toggle_observation_space()
 
     # Shows a text on the upper right corner of the screen (currently used to display the LTL formula)
     def show_text(self, text):

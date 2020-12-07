@@ -195,7 +195,7 @@ if pretrained_model_dir is not None:
 
 # Load observations preprocessor
 using_gnn = (args.gnn != "GRU" and args.gnn != "LSTM")
-obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0].observation_space, envs[0].get_propositions(), using_gnn, progression_mode)
+obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0], using_gnn, progression_mode)
 if "vocab" in status:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded.\n")
