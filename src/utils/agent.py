@@ -13,7 +13,7 @@ class Agent:
 
     def __init__(self, env, obs_space, vocab_space, action_space, model_dir, ignoreLTL,
                 gnn=False, dumb_ac = False, device=None, argmax=False, num_envs=1):
-        obs_space, self.preprocess_obss = utils.get_obss_preprocessor(obs_space, vocab_space, gnn)
+        obs_space, self.preprocess_obss = utils.get_obss_preprocessor(env, gnn)
         self.acmodel = ACModel(env, obs_space, action_space, ignoreLTL, gnn, dumb_ac)
         self.device = device
         self.argmax = argmax
