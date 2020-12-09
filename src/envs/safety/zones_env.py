@@ -32,9 +32,6 @@ class ZonesEnv(Engine):
     """
     def __init__(self, zones:list, use_fixed_map:float, timeout:int, config=dict):
         walled = True
-        world_extent = 3
-        walls = [(i/10, j) for i in range(-world_extent * 10,world_extent * 10 + 1,1) for j in range(-world_extent,world_extent+1,2 * world_extent)]
-        walls += [(i, j/10) for i in range(-world_extent, world_extent + 1,2 * world_extent) for j in range(-world_extent * 10, world_extent * 10 + 1,1)]
         self.DEFAULT.update({
             'observe_zones': False,
             'zones_num': 0,  # Number of hazards in an environment
@@ -45,6 +42,9 @@ class ZonesEnv(Engine):
         })
 
         if (walled):
+            world_extent = 2.5
+            walls = [(i/10, j) for i in range(int(-world_extent * 10),int(world_extent * 10 + 1),1) for j in [-world_extent, world_extent]]
+            walls += [(i, j/10) for i in [-world_extent, world_extent] for j in range(int(-world_extent * 10), int(world_extent * 10 + 1),1)]
             self.DEFAULT.update({
                 'placements_extents': [-world_extent, -world_extent, world_extent, world_extent],
                 'walls_num': len(walls),  # Number of walls
