@@ -33,6 +33,7 @@ import torch
 import torch_ac
 import tensorboardX
 import sys
+import glob
 from math import floor
 
 import utils
@@ -141,7 +142,16 @@ model_dir = utils.get_model_dir(model_name, storage_dir)
 pretrained_model_dir = None
 
 if args.pretrained_gnn:
-    pretrained_model_dir = utils.get_model_dir(args.pretrained_gnn)
+    assert(args.progression_mode == "full")
+    default_dir = f"symbol-storage/{gnn_name}-dumb_ac_{args.ltl_sampler}_{args.env}_seed:{args.seed}*_prog:{args.progression_mode}"
+    model_dirs = glob.glob(default_dir)
+
+    if len(model_dirs) == 0:
+        raise Exception("Pretraining directory not found.")
+    elif len(model_dirs) > 1:
+        raise Exception("More than 1 candidate pretraining directory found.")
+
+    pretrained_model_dir = model_dirs[0]
 # Load loggers and Tensorboard writer
 
 txt_logger = utils.get_txt_logger(model_dir + "/train")
