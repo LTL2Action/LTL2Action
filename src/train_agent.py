@@ -111,7 +111,7 @@ parser.add_argument("--recurrence", type=int, default=1,
                     help="number of time-steps gradient is backpropagated (default: 1). If > 1, a LSTM is added to the model to have memory.")
 parser.add_argument("--gnn", default="RGCN_8x32_ROOT_SHARED", help="use gnn to model the LTL (only if ignoreLTL==True)")
 parser.add_argument("--int-reward", type=float, default=0.0, help="the intrinsic reward for LTL progression (default: 0.0)")
-parser.add_argument("--pretrained-gnn", default=None,help="name of the model to be pre-loaded")
+parser.add_argument("--pretrained-gnn", action="store_true", default=False, help="load a pre-trained LTL module.")
 parser.add_argument("--dumb-ac", action="store_true", default=False,help="Use a single-layer actor-critic")
 parser.add_argument("--freeze-ltl", action="store_true", default=False,help="Freeze the gradient updates of the LTL module")
 
@@ -143,9 +143,9 @@ pretrained_model_dir = None
 
 if args.pretrained_gnn:
     assert(args.progression_mode == "full")
-    default_dir = f"symbol-storage/{gnn_name}-dumb_ac_{args.ltl_sampler}_{args.env}_seed:{args.seed}*_prog:{args.progression_mode}"
+    default_dir = f"symbol-storage/{args.gnn}-dumb_ac_{args.ltl_sampler}_Simple-LTL-Env-v0_seed:{args.seed}*_prog:{args.progression_mode}/train"
+    print(default_dir)
     model_dirs = glob.glob(default_dir)
-
     if len(model_dirs) == 0:
         raise Exception("Pretraining directory not found.")
     elif len(model_dirs) > 1:

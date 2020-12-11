@@ -71,7 +71,7 @@ class RGCNRootShared(GNN):
 
         self.num_layers = num_layers
         self.linear_in = nn.Linear(input_dim, hidden_dim)
-        self.conv = RelGraphConv(2*hidden_dim, hidden_dim, len(edge_types), activation=F.relu)
+        self.conv = RelGraphConv(2*hidden_dim, hidden_dim, len(edge_types), activation=torch.tanh)
         self.g_embed = nn.Linear(hidden_dim, output_dim)
 
     def forward(self, g):
