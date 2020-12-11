@@ -126,7 +126,7 @@ date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 gnn_name = args.gnn
 if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
-if args.pretrained_gnn is not None:
+if args.pretrained_gnn:
     gnn_name = gnn_name + "-pretrained"
 if args.freeze_ltl:
     gnn_name = gnn_name + "-freeze_ltl"
