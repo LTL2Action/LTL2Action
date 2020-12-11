@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --array=1-5
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=2G
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=16
 #SBATCH --partition=rtx6000
