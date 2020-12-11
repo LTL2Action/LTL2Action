@@ -149,12 +149,8 @@ class ZonesEnv(Engine):
 
         return offset
 
-    def reset(self):
-        if (self.use_fixed_map):
-            self.seed(self._seed - 1)
-
-        return super().reset()
-
+    def seed(self, seed=None):
+        if (self.use_fixed_map): self._seed = seed
 
 
 class LTLZonesEnv(ZonesEnv):
@@ -176,7 +172,7 @@ class LTLZonesEnv(ZonesEnv):
 
 class ZonesEnv1(LTLZonesEnv):
     def __init__(self):
-        super().__init__(zones=[zone.Red], use_fixed_map=False, timeout=1000, config=config)
+        super().__init__(zones=[zone.Red], use_fixed_map=False, timeout=1000)
 
 class ZonesEnv1Fixed(LTLZonesEnv):
     def __init__(self):

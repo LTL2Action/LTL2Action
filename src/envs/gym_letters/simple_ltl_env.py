@@ -58,4 +58,4 @@ class SimpleLTLEnv(gym.Env):
 
 class SimpleLTLEnvDefault(SimpleLTLEnv):
     def __init__(self):
-        super().__init__(letters="abcdefghijkl", timeout=25)
+        super().__init__(letters="abcdefghijkl", timeout=75)
