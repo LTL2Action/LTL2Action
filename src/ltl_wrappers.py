@@ -162,7 +162,7 @@ class LTLEnv(gym.Wrapper):
         return self.env.get_events()
 
 
-class IgnoreLTLWrapper(gym.Wrapper):
+class NoLTLWrapper(gym.Wrapper):
     def __init__(self, env):
         """
         Removes the LTL formula from an LTLEnv
