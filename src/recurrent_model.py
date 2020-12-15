@@ -33,6 +33,7 @@ class RecurrentACModel(nn.Module, torch_ac.RecurrentACModel):
         # Decide which components are enabled
         self.use_progression_info = "progress_info" in obs_space
         self.use_text = not ignoreLTL and (gnn_type == "GRU" or gnn_type == "LSTM") and "text" in obs_space
+        self.use_ast = not ignoreLTL and ("GCN" in gnn_type) and "text" in obs_space
         self.gnn_type = gnn_type
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.action_space = action_space
@@ -65,7 +66,7 @@ class RecurrentACModel(nn.Module, torch_ac.RecurrentACModel):
                 self.text_rnn = LSTMModel(obs_space["text"], self.word_embedding_size, 16, self.text_embedding_size).to(self.device)
             print("RNN Number of parameters:", sum(p.numel() for p in self.text_rnn.parameters() if p.requires_grad))
         
-        elif self.gnn_type:
+        elif self.use_ast:
             hidden_dim = 32
             self.text_embedding_size = 32
             self.gnn = GNNMaker(self.gnn_type, obs_space["text"], self.text_embedding_size).to(self.device)
@@ -78,7 +79,7 @@ class RecurrentACModel(nn.Module, torch_ac.RecurrentACModel):
         self.embedding_size = self.semi_memory_size
 
         print("embedding size:", self.embedding_size)
-        if self.use_text or self.gnn_type or self.use_progression_info:
+        if self.use_text or self.use_ast or self.use_progression_info:
             self.embedding_size += self.text_embedding_size
 
         if self.dumb_ac:
@@ -131,7 +132,7 @@ class RecurrentACModel(nn.Module, torch_ac.RecurrentACModel):
             embedding = torch.cat((embedding, embed_text), dim=1) if embedding is not None else embed_text
 
         # Adding GNN
-        elif self.gnn_type:
+        elif self.use_ast:
             embed_gnn = self.gnn(obs.text)
             embedding = torch.cat((embedding, embed_gnn), dim=1) if embedding is not None else embed_gnn
 
