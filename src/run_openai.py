@@ -28,7 +28,7 @@ def make_env(env_id, mpi_rank=0, subrank=0, seed=None, logger_dir=None, initiali
 
     # Adding general wraps
     env = ltl_wrappers.LTLEnv(env)
-    env = ltl_wrappers.IgnoreLTLWrapper(env) # For testing purposes
+    env = ltl_wrappers.NoLTLWrapper(env) # For testing purposes
 
     env.seed(seed + subrank if seed is not None else None)
     env = bench.Monitor(env,

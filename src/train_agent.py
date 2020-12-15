@@ -105,6 +105,8 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--ignoreLTL", action="store_true", default=False,
                     help="the network ignores the LTL input")
+parser.add_argument("--noLTL", action="store_true", default=False,
+                    help="the environment no longer has an LTL goal. --ignoreLTL must be specified concurrently.")
 parser.add_argument("--progression-mode", default="full",
                     help="Full: uses LTL progression; partial: shows the propositions which progress or falsify the formula; none: only original formula is seen. ")
 parser.add_argument("--recurrence", type=int, default=1,
@@ -124,6 +126,8 @@ use_mem = args.recurrence > 1
 date = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
 gnn_name = args.gnn
+if args.ignoreLTL:
+    gnn_name = "IgnoreLTL"
 if args.dumb_ac:
     gnn_name = gnn_name + "-dumb_ac"
 if args.pretrained_gnn:
@@ -177,7 +181,7 @@ txt_logger.info(f"Device: {device}\n")
 envs = []
 progression_mode = args.progression_mode
 for i in range(args.procs):
-    envs.append(utils.make_env(args.env, progression_mode, args.ltl_sampler, args.seed, args.int_reward, args.ignoreLTL))
+    envs.append(utils.make_env(args.env, progression_mode, args.ltl_sampler, args.seed, args.int_reward, args.noLTL))
 
 # Sync environments
 envs[0].reset()

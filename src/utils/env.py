@@ -9,12 +9,12 @@ import gym_minigrid
 import envs.gym_letters
 import ltl_wrappers
 
-def make_env(env_key, progression_mode, ltl_sampler, seed=None, intrinsic=0, ignoreLTL=False):
+def make_env(env_key, progression_mode, ltl_sampler, seed=None, intrinsic=0, noLTL=False):
     env = gym.make(env_key)
     env.seed(seed)
 
     # Adding LTL wrappers
-    if (ignoreLTL):
-        return ltl_wrappers.IgnoreLTLWrapper(env)
+    if (noLTL):
+        return ltl_wrappers.NoLTLWrapper(env)
     else:
         return ltl_wrappers.LTLEnv(env, progression_mode, ltl_sampler, intrinsic)
