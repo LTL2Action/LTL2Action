@@ -35,7 +35,7 @@ def get_obss_preprocessor(env, gnn, progression_mode):
                     })
 
             else:
-                obs_space = {"image": obs_space.spaces["features"].shape, "text": len(vocab_space) + 9}
+                obs_space = {"image": obs_space.spaces["features"].shape, "text": max(21, len(vocab_space) + 9)}
                 vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
                 vocab = Vocabulary(vocab_space)
@@ -61,7 +61,7 @@ def get_obss_preprocessor(env, gnn, progression_mode):
                         "progress_info":  torch.stack([torch.tensor(obs["progress_info"], dtype=torch.float) for obs in obss], dim=0).to(device)
                     })
             else:
-                obs_space = {"text": len(vocab_space) + 9}
+                obs_space = {"text": max(21, len(vocab_space) + 9)}
                 vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
                 vocab = Vocabulary(vocab_space)
@@ -138,9 +138,10 @@ class Vocabulary:
     def __init__(self, vocab_space):
         self.max_size = vocab_space["max_size"]
         self.vocab = {}
-        # # populate the vocab with the LTL operators
-        # for item in ['next', 'until', 'and', 'or', 'eventually', 'always', 'not']:
-        #     self.__getitem__(item)
+
+        # populate the vocab with the LTL operators
+        for item in ['next', 'until', 'and', 'or', 'eventually', 'always', 'not', 'True', 'False']:
+            self.__getitem__(item)
 
     def load_vocab(self, vocab):
         self.vocab = vocab

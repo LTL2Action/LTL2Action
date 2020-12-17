@@ -155,7 +155,8 @@ class ACModel(nn.Module, torch_ac.ACModel):
 class LSTMModel(nn.Module):
     def __init__(self, obs_size, word_embedding_size=32, hidden_dim=32, text_embedding_size=32):
         super().__init__()
-        self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
+        # For all our experiments we want the embedding to be a fixed size so we can "transfer". 
+        self.word_embedding = nn.Embedding(max(obs_size,21) , word_embedding_size)
         self.lstm = nn.LSTM(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
         self.output_layer = nn.Linear(2*hidden_dim, text_embedding_size)
 
@@ -167,7 +168,7 @@ class LSTMModel(nn.Module):
 class GRUModel(nn.Module):
     def __init__(self, obs_size, word_embedding_size=32, hidden_dim=32, text_embedding_size=32):
         super().__init__()
-        self.word_embedding = nn.Embedding(obs_size, word_embedding_size)
+        self.word_embedding = nn.Embedding(max(obs_size,21), word_embedding_size)
         self.gru = nn.GRU(word_embedding_size, hidden_dim, num_layers=2, batch_first=True, bidirectional=True)
         self.output_layer = nn.Linear(2*hidden_dim, text_embedding_size)
 
