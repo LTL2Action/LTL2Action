@@ -158,7 +158,7 @@ class LTLZonesEnv(ZonesEnv):
         super().__init__(zones=zones, use_fixed_map=use_fixed_map, timeout=timeout, config=config)
 
     def get_propositions(self):
-        return [str(i) for i in [self.zone_types] + list(range(12 - len(self.zone_types)))]
+        return [str(i) for i in (self.zone_types + list(range(12 - len(self.zone_types))))]
 
     def get_events(self):
         events = ""
