@@ -13,7 +13,7 @@ class Play(gym.Wrapper):
     def __init__(self, env):
         super().__init__(env)
         self.env = env
-        self.env.toggle_observation_space()
+        self.key_pressed = None
 
     # Shows a text on the upper right corner of the screen (currently used to display the LTL formula)
     def show_text(self, text):
@@ -35,7 +35,7 @@ class Play(gym.Wrapper):
 
     def wrap_obs(self, obs):
         if not self.env.viewer is None:
-            obs['key_pressed'] = self.env.viewer.consume_key()
+            self.key_pressed = self.env.viewer.consume_key()
 
         return obs
 
