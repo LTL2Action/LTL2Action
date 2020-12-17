@@ -11,10 +11,11 @@ class Agent:
     - to choose an action given an observation,
     - to analyze the feedback (i.e. reward and done state) of its action."""
 
-    def __init__(self, env, obs_space, vocab_space, action_space, model_dir, ignoreLTL,
-                gnn=False, dumb_ac = False, device=None, argmax=False, num_envs=1):
-        obs_space, self.preprocess_obss = utils.get_obss_preprocessor(env, gnn)
-        self.acmodel = ACModel(env, obs_space, action_space, ignoreLTL, gnn, dumb_ac)
+    def __init__(self, env, obs_space, vocab_space, action_space, model_dir, ignoreLTL, progression_mode,
+                gnn, dumb_ac = False, device=None, argmax=False, num_envs=1):
+        using_gnn = (gnn != "GRU" and gnn != "LSTM")
+        obs_space, self.preprocess_obss = utils.get_obss_preprocessor(env, using_gnn, progression_mode)
+        self.acmodel = ACModel(env, obs_space, action_space, ignoreLTL, gnn, dumb_ac, True)
         self.device = device
         self.argmax = argmax
         self.num_envs = num_envs

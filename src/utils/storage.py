@@ -3,6 +3,7 @@ import os
 import torch
 import logging
 import sys
+import pickle
 
 import utils
 
@@ -29,7 +30,7 @@ def get_status_path(model_dir):
 
 def get_status(model_dir):
     path = get_status_path(model_dir)
-    return torch.load(path)
+    return torch.load(path, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
 
 def save_status(status, model_dir):
@@ -67,3 +68,17 @@ def get_csv_logger(model_dir):
     utils.create_folders_if_necessary(csv_path)
     csv_file = open(csv_path, "a")
     return csv_file, csv.writer(csv_file)
+
+
+def load_config(model_dir):
+    path = os.path.join(model_dir, "config.pickle")
+    if (not os.path.exists(path)):
+        print(f"No config file found at: {path}")
+
+    return pickle.load(open(path, "rb"))
+
+def save_config(model_dir, config):
+    path = os.path.join(model_dir, "config.pickle")
+    utils.create_folders_if_necessary(path)
+
+    pickle.dump(config, open(path, "wb"))

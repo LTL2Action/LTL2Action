@@ -16,13 +16,14 @@ the same directory as the trained model.
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
                 seed=0, device="cpu", argmax=False,
-                num_procs=1, ignoreLTL=False, useProgression=True, gnn=None, dumb_ac = False):
+                num_procs=1, ignoreLTL=False, progression_mode=True, gnn=None, dumb_ac = False):
 
         self.env = env
         self.device = device
         self.argmax = argmax
         self.num_procs = num_procs
         self.ignoreLTL = ignoreLTL
+        self.progression_mode = progression_mode
         self.gnn = gnn
         self.dumb_ac = dumb_ac
 
@@ -32,7 +33,7 @@ class Eval:
         # Load environments for evaluation
         eval_envs = []
         for i in range(self.num_procs):
-            eval_envs.append(utils.make_env(env, useProgression, ltl_sampler, seed))
+            eval_envs.append(utils.make_env(env, progression_mode, ltl_sampler, seed))
         self.vocab_space = eval_envs[0].get_propositions()
         self.eval_envs = ParallelEnv(eval_envs)
 
@@ -40,8 +41,8 @@ class Eval:
     def eval(self, num_frames, episodes=100, stdout=False):
         # Load agent
 
-        agent = utils.Agent(self.env, self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train",
-                self.ignoreLTL, gnn=self.gnn, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
+        agent = utils.Agent(self.env, self.eval_envs.observation_space, self.vocab_space, self.eval_envs.action_space, self.model_dir + "/train", self.gnn,
+                self.ignoreLTL, progression_mode = self.progression_mode, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
         # Run agent

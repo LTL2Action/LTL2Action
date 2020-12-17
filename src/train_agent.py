@@ -161,6 +161,7 @@ if args.pretrained_gnn:
 txt_logger = utils.get_txt_logger(model_dir + "/train")
 csv_file, csv_logger = utils.get_csv_logger(model_dir + "/train")
 tb_writer = tensorboardX.SummaryWriter(model_dir + "/train")
+utils.save_config(model_dir + "/train", args)
 
 # Log command and all script arguments
 
