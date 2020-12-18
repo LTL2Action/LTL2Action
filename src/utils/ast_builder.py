@@ -19,6 +19,10 @@ class ASTBuilder(object):
         self.props = propositions
 
         terminals = ['True', 'False'] + self.props
+        ## Pad terminals with dummy propositions to get a fixed encoding size
+        for i in range(15 - len(terminals)):
+            terminals.append("dummy_"+str(i))
+
         self._enc = OneHotEncoder(handle_unknown='ignore', dtype=np.int)
         self._enc.fit([['next'], ['until'], ['and'], ['or'], ['eventually'],
             ['always'], ['not']] + np.array(terminals).reshape((-1, 1)).tolist())
