@@ -18,16 +18,13 @@ from ltl_wrappers import LTLEnv
 def get_obss_preprocessor(env, gnn, progression_mode):
     obs_space = env.observation_space
     vocab_space = env.get_propositions()
+    vocab = None
 
     if isinstance(env, LTLEnv): #LTLEnv Wrapped env
         env = env.unwrapped
         if isinstance(env, LetterEnv) or isinstance(env, MinigridEnv) or isinstance(env, ZonesEnv):
             if progression_mode == "partial":
                 obs_space = {"image": obs_space.spaces["features"].shape, "progress_info": len(vocab_space)}
-                vocab_space = {"max_size": len(vocab_space) + 9, "tokens": vocab_space}
-
-                vocab = Vocabulary(vocab_space)
-                tree_builder = utils.ASTBuilder(vocab_space["tokens"])
                 def preprocess_obss(obss, device=None):
                     return torch_ac.DictList({
                         "image": preprocess_images([obs["features"] for obs in obss], device=device),
@@ -35,7 +32,7 @@ def get_obss_preprocessor(env, gnn, progression_mode):
                     })
 
             else:
-                obs_space = {"image": obs_space.spaces["features"].shape, "text": max(21, len(vocab_space) + 9)}
+                obs_space = {"image": obs_space.spaces["features"].shape, "text": max(22, len(vocab_space) + 10)}
                 vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
                 vocab = Vocabulary(vocab_space)
@@ -51,17 +48,12 @@ def get_obss_preprocessor(env, gnn, progression_mode):
         elif isinstance(env, SimpleLTLEnv):
             if progression_mode == "partial":
                 obs_space = {"progress_info": len(vocab_space)}
-                vocab_space = {"max_size": len(vocab_space) + 9, "tokens": vocab_space}
-
-                vocab = Vocabulary(vocab_space)
-                tree_builder = utils.ASTBuilder(vocab_space["tokens"])
-
                 def preprocess_obss(obss, device=None):
                     return torch_ac.DictList({
                         "progress_info":  torch.stack([torch.tensor(obs["progress_info"], dtype=torch.float) for obs in obss], dim=0).to(device)
                     })
             else:
-                obs_space = {"text": max(21, len(vocab_space) + 9)}
+                obs_space = {"text": max(22, len(vocab_space) + 10)}
                 vocab_space = {"max_size": obs_space["text"], "tokens": vocab_space}
 
                 vocab = Vocabulary(vocab_space)
@@ -141,6 +133,9 @@ class Vocabulary:
 
         # populate the vocab with the LTL operators
         for item in ['next', 'until', 'and', 'or', 'eventually', 'always', 'not', 'True', 'False']:
+            self.__getitem__(item)
+
+        for item in vocab_space["tokens"]:
             self.__getitem__(item)
 
     def load_vocab(self, vocab):
