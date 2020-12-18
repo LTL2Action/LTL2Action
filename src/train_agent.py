@@ -211,7 +211,7 @@ if pretrained_model_dir is not None:
 # Load observations preprocessor
 using_gnn = (args.gnn != "GRU" and args.gnn != "LSTM")
 obs_space, preprocess_obss = utils.get_obss_preprocessor(envs[0], using_gnn, progression_mode)
-if "vocab" in status:
+if "vocab" in status and preprocess_obss.vocab is not None:
     preprocess_obss.vocab.load_vocab(status["vocab"])
 txt_logger.info("Observations preprocessor loaded.\n")
 
@@ -322,7 +322,7 @@ while num_frames < args.frames:
     if args.save_interval > 0 and update % args.save_interval == 0:
         status = {"num_frames": num_frames, "update": update,
                   "model_state": algo.acmodel.state_dict(), "optimizer_state": algo.optimizer.state_dict()}
-        if hasattr(preprocess_obss, "vocab"):
+        if hasattr(preprocess_obss, "vocab") and preprocess_obss.vocab is not None:
             status["vocab"] = preprocess_obss.vocab.vocab
         utils.save_status(status, model_dir + "/train")
         txt_logger.info("Status saved")
