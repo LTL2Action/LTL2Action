@@ -107,8 +107,8 @@ class ZonesEnvModel(EnvModel):
 
         if "image" in obs_space.keys():
             n = obs_space["image"][0]
-            lidar_num_bins = 8
-            self.embedding_size = (n-12)//lidar_num_bins + 4
+            lidar_num_bins = 16
+            self.embedding_size = 64 #(n-12)//lidar_num_bins + 4
             self.net_ = nn.Sequential(
                 nn.Linear(n, 128),
                 nn.ReLU(),

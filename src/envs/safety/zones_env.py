@@ -71,7 +71,7 @@ class ZonesEnv(Engine):
         parent_config = {
             'robot_base': 'xmls/point.xml',
             'task': 'none',
-            'lidar_num_bins': 8,
+            'lidar_num_bins': 16,
             'observe_zones': True,
             'zones_num': len(zones),
             'num_steps': timeout
