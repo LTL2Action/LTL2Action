@@ -37,8 +37,8 @@ class ZonesEnv(Engine):
             'zones_num': 0,  # Number of hazards in an environment
             'zones_placements': None,  # Placements list for hazards (defaults to full extents)
             'zones_locations': [],  # Fixed locations to override placements
-            'zones_keepout': 0.4,  # Radius of hazard keepout for placement
-            'zones_size': 0.3,  # Radius of hazards
+            'zones_keepout': 0.55,  # Radius of hazard keepout for placement
+            'zones_size': 0.25,  # Radius of hazards
         })
 
         if (walled):
@@ -71,7 +71,7 @@ class ZonesEnv(Engine):
         parent_config = {
             'robot_base': 'xmls/point.xml',
             'task': 'none',
-            'lidar_num_bins': 8,
+            'lidar_num_bins': 16,
             'observe_zones': True,
             'zones_num': len(zones),
             'num_steps': timeout
@@ -183,8 +183,8 @@ class ZonesEnv1Fixed(LTLZonesEnv):
 
 class ZonesEnv5(LTLZonesEnv):
     def __init__(self):
-        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.White, zone.Yellow], use_fixed_map=False, timeout=1000)
+        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.Red, zone.White, zone.White,  zone.Yellow, zone.Yellow], use_fixed_map=False, timeout=1000)
 
 class ZonesEnv5Fixed(LTLZonesEnv):
     def __init__(self):
-        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.White, zone.Yellow], use_fixed_map=True, timeout=1000)
+        super().__init__(zones=[zone.JetBlack, zone.JetBlack, zone.Red, zone.Red, zone.White, zone.White,  zone.Yellow, zone.Yellow], use_fixed_map=True, timeout=1000)
