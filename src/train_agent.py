@@ -147,7 +147,7 @@ pretrained_model_dir = None
 
 if args.pretrained_gnn:
     assert(args.progression_mode == "full")
-    default_dir = f"symbol-storage/{args.gnn}-dumb_ac_{args.ltl_sampler}_Simple-LTL-Env-v0_seed:{args.seed}*_prog:{args.progression_mode}/train"
+    default_dir = f"symbol-storage/{args.gnn}-dumb_ac_{args.ltl_sampler}_Simple-LTL-Env-v0_seed:{args.seed}_*_prog:{args.progression_mode}/train"
     print(default_dir)
     model_dirs = glob.glob(default_dir)
     if len(model_dirs) == 0:
