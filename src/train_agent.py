@@ -224,7 +224,7 @@ if "model_state" in status:
     acmodel.load_state_dict(status["model_state"])
     txt_logger.info("Loading model from existing run.\n")
 
-if args.pretrained_gnn:
+elif args.pretrained_gnn:
     acmodel.load_pretrained_gnn(pretrained_status["model_state"])
     txt_logger.info("Pretrained model loaded.\n")
 
