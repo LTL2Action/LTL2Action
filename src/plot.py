@@ -1,12 +1,17 @@
 import tensorflow as tf
 import glob
 import matplotlib.pyplot as plt 
+from matplotlib.ticker import FormatStrFormatter, ScalarFormatter
+from matplotlib import rc
 import numpy as np
 import scipy.stats as sp
+from cycler import cycler
 
-MAX_HORIZON = 1000000000    
+plt.rcParams["font.family"] = "Times New Roman" 
+plt.rcParams['axes.prop_cycle'] = cycler('color',['#377eb8', '#ff7f00', '#4daf4a','#f781bf', '#a65628', '#984ea3','#999999', '#e41a1c', '#dede00'])
+lite = False
 
-def read_data(tf_dir, tag="return_mean"):
+def read_data(tf_dir, tag="return_mean", MAX_HORIZON=1000000000):
 
     list_of_data = []
 
@@ -50,18 +55,20 @@ def read_data(tf_dir, tag="return_mean"):
 
 
     # Cumulative sum smoothing
-    window_width = 10
+    window_width = 1
     cumsum_vec = np.cumsum(np.insert(cleaned_data, 0, 0)) 
     ma_vec = (cumsum_vec[window_width:] - cumsum_vec[:-window_width]) / window_width
     return cleaned_frames[:len(ma_vec)], ma_vec
 
 # Returns (X_data, (Y_average, Y_error))
-def read_data_and_average(tf_dirs, tag="return_mean"):
+def read_data_and_average(tf_dirs, tag="return_mean", MAX_HORIZON=1000000000):
     X_all = None
     Ys = []
 
+    if lite:
+        tf_dirs = tf_dirs[:1]
     for tf_dir in tf_dirs:
-        X, Y = read_data(tf_dir, tag)
+        X, Y = read_data(tf_dir, tag, MAX_HORIZON)
 
         Ys.append(Y)
         if X_all is None:
@@ -97,17 +104,295 @@ def read_data_and_average(tf_dirs, tag="return_mean"):
 
     return X_all, avgs, lower, upper
 
+def plot_letter_env_experiments():
+    until_logs = [glob.glob("storage-good/RGCN/*Until*/train/"),
+                    glob.glob("storage-good/GRU/*Until*/train/"),
+                    glob.glob("storage-good/LSTM/*Until*/train/"),
+                    glob.glob("storage-good/Myopic/*Until*/train/"),
+                    glob.glob("storage-good/GRU-no-progression/*Until*/train/"),
+                    glob.glob("storage-good/No-LTL/*Until*/train/")
+                ]
 
-# # Letter-Env UNTIL_1_3_1_2
-A_logs = glob.glob("storage-good/RGCN/*Until*/train/")
-B_logs = glob.glob("storage-good/GRU/*Until*/train/")
-C_logs = glob.glob("storage-good/LSTM/*Until*/train/")
-D_logs = glob.glob("storage-good/Myopic/*Until*/train/")
-E_logs = glob.glob("storage-good/GRU-no-progression/*Until*/train/")
-F_logs = glob.glob("storage-good/No-LTL/*Until*/train/")
-lines = [(A_logs, "GNN+progression"), (B_logs, "GRU+progression"), (C_logs, "LSTM+progression"), (D_logs, "Myopic"), (E_logs, "GRU"), (F_logs, "No LTL")]
-MAX_HORIZON = 20000000
-title = "Letter-Env: Until_1_3_1_2"
+    eventually_logs = [glob.glob("storage-good/RGCN/*Eventually*/train/"),
+                    glob.glob("storage-good/GRU/*Eventually*/train/"),
+                    glob.glob("storage-good/LSTM/*Eventually*/train/"),
+                    glob.glob("storage-good/Myopic/*Eventually*/train/"),
+                    glob.glob("storage-good/GRU-no-progression/*Eventually*/train/"),
+                    glob.glob("storage-good/No-LTL/*Eventually*/train/")
+                ]
+
+    labels = ["GNN+progression", "GRU+progression", "LSTM+progression", "Myopic", "GRU", "No LTL"]
+    horizon = 20000000000
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    plt.subplots_adjust(top = 0.92, bottom = 0.28, hspace = 0, wspace = 0.12, left=0.07, right = 0.96)
+    fig.set_size_inches(10,5)
+    
+
+    ax1.set_ylabel("Discounted return", fontsize = 16)
+    ax1.tick_params(labelsize=12)
+    ax1.set_title("Avoidance Tasks", fontsize = 16)
+    ax1.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    for data_line, label in zip(until_logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="average_discounted_return", MAX_HORIZON=horizon) #average_discounted_return, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+        ax1.plot(X, Y_avg, linewidth = 2, label=label)
+        ax1.fill_between(X, Y_lower, Y_upper, alpha=0.2)
+
+    ax2.tick_params(labelsize=12)
+    ax2.set_title("Parallel Tasks", fontsize = 16)
+    ax2.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    for data_line, label in zip(eventually_logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="average_discounted_return", MAX_HORIZON=horizon) #return_mean, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+        ax2.plot(X, Y_avg, linewidth = 2, label=label)
+        ax2.fill_between(X, Y_lower, Y_upper, alpha=0.2)
+
+    fig.text(0.5, 0.2, 'Frames (millions)', ha='center', fontsize = 16)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    legend = fig.legend(handles, labels, loc="lower center",bbox_to_anchor = (0.5, 0), markerscale=6, fontsize=16, ncol = 3)
+
+    for i in range(len(legend.get_lines())):
+        legend.get_lines()[i].set_linewidth(3)
+
+    plt.savefig("figs/letter-env.pdf")
+    plt.show()
+
+
+
+def plot_pretraining_experiments():
+    until_logs = [glob.glob("storage-good/RGCN/*Until_1_3_1_2*/train/"),
+                    glob.glob("transfer-storage/RGCN/*pretrained_Until_1_3_1_2*/train/"),
+                    glob.glob("storage-good/GRU/*Until_1_3_1_2*/train/"),
+                    glob.glob("transfer-storage/GRU/*pretrained_Until_1_3_1_2*/train/"),
+                    glob.glob("storage-good/Myopic/*Until*/train/")
+                ]
+
+
+    eventually_logs = [glob.glob("storage-good/RGCN/*Eventually_1_5_1_4*/train/"),
+                    glob.glob("transfer-storage/RGCN/*pretrained_Eventually_1_5_1_4*/train/"),
+                    glob.glob("storage-good/GRU/*Eventually_1_5_1_4*/train/"),
+                    glob.glob("transfer-storage/GRU/*pretrained_Eventually_1_5_1_4*/train/"),
+                    glob.glob("storage-good/Myopic/*Eventually*/train/")
+                ]
+
+    labels = ["GNN+progression", "GNN+progression+pretraining", "GRU+progression", "GRU+progression+pretraining",   "Myopic"]
+    horizon = 10000000
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    plt.subplots_adjust(top = 0.92, bottom = 0.28, hspace = 0, wspace = 0.12, left=0.07, right = 0.96)
+    fig.set_size_inches(10,5)
+    
+
+    ax1.set_ylabel("Discounted return", fontsize = 16)
+    ax1.tick_params(labelsize=12)
+    ax1.set_title("Avoidance Tasks", fontsize = 16)
+    ax1.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+
+
+    for data_line, label in zip(until_logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="average_discounted_return", MAX_HORIZON=horizon) #average_discounted_return, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+
+        if label == "GNN+progression":
+            color = '#377eb8'
+            style = "-"
+        elif label == "GNN+progression+pretraining":
+            color = '#377eb8'
+            style = "dotted"
+        elif label == "GRU+progression":
+            color = "#ff7f00"
+            style = "-"
+        elif label == "GRU+progression+pretraining":
+            color = "#ff7f00"
+            style = "dotted"
+        elif label == "Myopic":
+            color = '#f781bf'
+            style = "-"
+        else:
+            raise Exception("")
+
+        ax1.plot(X, Y_avg, linewidth = 2, label=label, linestyle=style, color=color)
+        ax1.fill_between(X, Y_lower, Y_upper, alpha=0.2, color=color)
+
+    ax2.tick_params(labelsize=12)
+    ax2.set_title("Parallel Tasks", fontsize = 16)
+    ax2.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    for data_line, label in zip(eventually_logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="average_discounted_return", MAX_HORIZON=horizon) #return_mean, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+
+        if label == "GNN+progression":
+            color = '#377eb8'
+            style = "-"
+        elif label == "GNN+progression+pretraining":
+            color = '#377eb8'
+            style = "dotted"
+        elif label == "GRU+progression":
+            color = "#ff7f00"
+            style = "-"
+        elif label == "GRU+progression+pretraining":
+            color = "#ff7f00"
+            style = "dotted"
+        elif label == "Myopic":
+            color = '#f781bf'
+            style = "-"
+        else:
+            raise Exception("")
+
+        ax2.plot(X, Y_avg, linewidth = 2, label=label, linestyle=style, color=color)
+        ax2.fill_between(X, Y_lower, Y_upper, alpha=0.2, color=color)
+
+    fig.text(0.5, 0.2, 'Frames (millions)', ha='center', fontsize = 16)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    legend = fig.legend(handles, labels, loc="lower center",bbox_to_anchor = (0.5, 0), markerscale=6, fontsize=16, ncol = 3)
+
+    for i in range(len(legend.get_lines())):
+        legend.get_lines()[i].set_linewidth(3)
+
+    plt.savefig("figs/transfer.pdf")
+    plt.show()
+
+
+def plot_safety_experiments():
+
+
+
+# plt.figure(figsize=(4,3))
+# plt.ylabel("Discounted return")
+# plt.xlabel("Frames")
+# plt.title(title)
+
+# for data_line, label in lines:
+#     X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="return_mean") #return_mean, average_discounted_return, average_reward_per_step
+#     plt.plot(X, Y_avg, linewidth = 1, label=label)
+#     plt.fill_between(X, Y_lower, Y_upper, alpha=0.2)
+
+
+
+
+# plt.legend()
+# # plt.savefig("figs/" + title + ".pdf")
+# plt.show()
+
+
+    A_logs = glob.glob("zone-good/pretrained/*/train/")
+    B_logs = glob.glob("zone-good/RGCN/*/train/")
+    C_logs = glob.glob("zone-good/myopic/*/train/")
+    
+
+    logs = [A_logs, B_logs, C_logs]
+    labels = ["GNN+progression+pretraining", "GNN+progression", "Myopic"]
+
+    horizon = 20000000
+
+    fig, (ax1) = plt.subplots(1, 1)
+    fig.set_size_inches(7,5)
+    
+
+    plt.ylabel("Total reward", fontsize = 16)
+    plt.tick_params(labelsize=12)
+    plt.title("Avoidance Tasks", fontsize = 16)
+    ax1.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+
+    for data_line, label in zip(logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="return_mean", MAX_HORIZON=horizon) #average_discounted_return, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+
+        if label == "GNN+progression+pretraining":
+            color = '#377eb8'
+            style = "dotted"
+        elif label == "Myopic":
+            color = '#f781bf'
+            style = "-"
+        elif label == "GNN+progression":
+            color = '#377eb8'
+            style = "-"
+        else:
+            raise Exception("")
+
+        plt.plot(X, Y_avg, linewidth = 2, label=label, color=color, linestyle=style)
+        plt.fill_between(X, Y_lower, Y_upper, alpha=0.2, color=color)
+
+    plt.xlabel('Frames (millions)', fontsize = 16)
+
+    handles, labels = ax1.get_legend_handles_labels()
+    legend = plt.legend(handles, labels, markerscale=6, fontsize=16)
+
+    for i in range(len(legend.get_lines())):
+        legend.get_lines()[i].set_linewidth(3)
+
+    plt.savefig("figs/safety.pdf")
+    plt.show()
+
+
+def plot_toy_experiments():
+    # Toy
+
+    A_logs = glob.glob("toy-minigrid/RGCN/*/train/")
+    B_logs = glob.glob("toy-minigrid/myopic/*/train/")
+    
+
+    logs = [A_logs, B_logs]
+    labels = ["GNN+progression", "Myopic"]
+    horizon = 3000000
+
+    fig, (ax1) = plt.subplots(1, 1)
+    fig.set_size_inches(7,5)
+    
+
+    plt.ylabel("Total reward", fontsize = 16)
+    plt.tick_params(labelsize=12)
+    #plt.title("Avoidance Tasks", fontsize = 16)
+    #ax1.xaxis.set_major_formatter(ScalarFormatter())
+    plt.ylim([0,1.05])
+
+    for data_line, label in zip(logs, labels):
+        X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="return_mean", MAX_HORIZON=horizon) #average_discounted_return, average_discounted_return, average_reward_per_step
+        X = [x / 1000000 for x in X]
+
+        if label == "GNN+progression+pretraining":
+            color = '#377eb8'
+            style = "dotted"
+        elif label == "Myopic":
+            color = '#f781bf'
+            style = "-"
+        elif label == "GNN+progression":
+            color = '#377eb8'
+            style = "-"
+        else:
+            raise Exception("")
+
+        plt.plot(X, Y_avg, linewidth = 2, label=label, color=color, linestyle=style)
+        plt.fill_between(X, Y_lower, Y_upper, alpha=0.2, color=color)
+
+    plt.xlabel('Frames (millions)', fontsize = 16)  
+
+    handles, labels = ax1.get_legend_handles_labels()
+    legend = plt.legend(handles, labels, markerscale=6, fontsize=16, loc="lower right")
+
+    for i in range(len(legend.get_lines())):
+        legend.get_lines()[i].set_linewidth(3)
+
+    plt.savefig("figs/toy.pdf")
+    plt.show()
+
+# # # Letter-Env UNTIL_1_3_1_2
+# A_logs = glob.glob("storage-good/RGCN/*Until*/train/")
+# B_logs = glob.glob("storage-good/GRU/*Until*/train/")
+# C_logs = glob.glob("storage-good/LSTM/*Until*/train/")
+# D_logs = glob.glob("storage-good/Myopic/*Until*/train/")
+# E_logs = glob.glob("storage-good/GRU-no-progression/*Until*/train/")
+# F_logs = glob.glob("storage-good/No-LTL/*Until*/train/")
+# lines = [(A_logs, "GNN+progression"), (B_logs, "GRU+progression"), (C_logs, "LSTM+progression"), (D_logs, "Myopic"), (E_logs, "GRU"), (F_logs, "No LTL")]
+# MAX_HORIZON = 20000000
+# title = "Letter-Env: Until_1_3_1_2"
 
 
 # # Letter-Env EVENTUALLY_1_5_1_4
@@ -206,28 +491,42 @@ title = "Letter-Env: Until_1_3_1_2"
 #=============================================================================================================================================
 
 
-# # Safety
-# A_logs = glob.glob("tmp-storage/GRU-pretrained*bs:2048*fpp:2048*lr:0.0003*ent:0.003*prog:full/train/")
-# B_logs = glob.glob("tmp-storage/GRU_*bs:1024*fpp:4096*lr:0.0001*ent:0.001*prog:partial/train/")
+# #Safety
+# A_logs = glob.glob("zone-good/pretrained/*/train/")
+# B_logs = glob.glob("zone-good/myopic/*/train/")
 
 # lines = [(A_logs, "Best GNN so far"),(B_logs, "Best Myopic")]
+# title = "Safety"
+
+# #=========================================
+
+# # Toy
+
+# # A_logs = glob.glob("toy-minigrid/RGCN/*/train/")
+# # B_logs = glob.glob("toy-minigrid/myopic/*/train/")
+# # lines = [(A_logs, "GNN"), (B_logs, "Myopic")]
+# # title = "Toy Minigrid"
 
 
-#=========================================
-plt.figure(figsize=(12,6))
-plt.ylabel("Discounted return")
-plt.xlabel("Frames")
-plt.title(title)
+# plt.figure(figsize=(4,3))
+# plt.ylabel("Discounted return")
+# plt.xlabel("Frames")
+# plt.title(title)
 
-for data_line, label in lines:
-    X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="average_discounted_return") #return_mean, average_discounted_return, average_reward_per_step
-    plt.plot(X, Y_avg, linewidth = 1, label=label)
-    plt.fill_between(X, Y_lower, Y_upper, alpha=0.2)
-
+# for data_line, label in lines:
+#     X, Y_avg, Y_lower, Y_upper = read_data_and_average(data_line, tag="return_mean") #return_mean, average_discounted_return, average_reward_per_step
+#     plt.plot(X, Y_avg, linewidth = 1, label=label)
+#     plt.fill_between(X, Y_lower, Y_upper, alpha=0.2)
 
 
 
-plt.legend()
-# plt.savefig("figs/" + title + ".pdf")
-plt.show()
 
+# plt.legend()
+# # plt.savefig("figs/" + title + ".pdf")
+# plt.show()
+
+
+#plot_letter_env_experiments()
+# plot_pretraining_experiments()
+plot_safety_experiments()
+# plot_toy_experiments()
