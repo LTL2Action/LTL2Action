@@ -10,9 +10,7 @@ from envs.gym_letters.letter_env import LetterEnv
 
 """
 This class evaluates a model on a validation dataset generated online
-via the sampler (ltl_sampler) that is passed in (model_name). It outputs
-the results for visualization on TensorBoard by creating a folder under
-the same directory as the trained model.
+via the sampler (ltl_sampler) that is passed in (model_name).
 """
 class Eval:
     def __init__(self, env, model_name, ltl_sampler,
@@ -50,19 +48,16 @@ class Eval:
 
     def eval(self, num_frames, episodes=100, stdout=True):
         # Load agent
-
+            
         agent = utils.Agent(self.eval_envs.envs[0], self.eval_envs.observation_space, self.eval_envs.action_space, self.model_dir + "/train", 
-                self.ignoreLTL, self.progression_mode, self.gnn, recurrence = self.recurrence, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
+            self.ignoreLTL, self.progression_mode, self.gnn, recurrence = self.recurrence, dumb_ac = self.dumb_ac, device=self.device, argmax=self.argmax, num_envs=self.num_procs)
 
 
         # Run agent
         start_time = time.time()
 
         obss = self.eval_envs.reset()
-
-        # This is only giving unbiased evaluations for n_procs = 1 right now
         log_counter = 0
-        assert(self.num_procs == 1)
 
         log_episode_return = torch.zeros(self.num_procs, device=self.device)
         log_episode_num_frames = torch.zeros(self.num_procs, device=self.device)
@@ -92,35 +87,6 @@ class Eval:
 
         return logs["return_per_episode"], logs["num_frames_per_episode"]
 
-        # Print logs
-        # num_frame_pe = sum(logs["num_frames_per_episode"])
-        # fps = num_frame_pe/(end_time - start_time)
-        # duration = int(end_time - start_time)
-        # return_per_episode = utils.synthesize(logs["return_per_episode"])
-        # num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
-        # average_discounted_return = utils.average_discounted_return(logs["return_per_episode"], logs["num_frames_per_episode"], self.discount)
-
-        # header = ["frames", "FPS", "duration"]
-        # data   = [num_frame_pe, fps, duration]
-        # header += ["num_frames_" + key for key in num_frames_per_episode.keys()]
-        # data += num_frames_per_episode.values()
-        # header += ["average_discounted_return"]
-        # data += [average_discounted_return]
-
-        # # txt_logger.info(
-        # #     "F {:06} | FPS {:04.0f} | D {} | R:μσmM {:.2f} {:.2f} {:.2f} {:.2f} | F:μσmM {:.1f} {:.1f} {} {}"
-        # #     .format(*data))
-
-        # header += ["return_" + key for key in return_per_episode.keys()]
-        # data += return_per_episode.values()
-
-        # for field, value in zip(header, data):
-        #     if stdout:
-        #         print(field, value)
-            #else:
-                #self.tb_writer.add_scalar(field, value, num_frames)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--ltl-sampler", default="Default",
@@ -149,17 +115,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    print(args)
-
-
-    # envs = []
-
-    # for i in range(args.procs):
-    #     envs.append(utils.make_env(args.env, args.progression_mode, args.ltl_sampler, args.seed, args.int_reward, args.noLTL))
     logs_returns_per_episode = []
     logs_num_frames_per_episode = [] 
-
-
 
     for model_path in args.model_paths:
         idx = model_path.find("seed:") + 5
@@ -174,7 +131,8 @@ if __name__ == '__main__':
 
         print(sum(rpe), seed, model_path)
 
-
+    print(logs_num_frames_per_episode)
+    print(logs_returns_per_episode)
     num_frame_pe = sum(logs_num_frames_per_episode)
     return_per_episode = utils.synthesize(logs_returns_per_episode)
     num_frames_per_episode = utils.synthesize(logs_num_frames_per_episode)
@@ -187,27 +145,8 @@ if __name__ == '__main__':
     header += ["average_discounted_return", "err"]
     data += [average_discounted_return, error]
 
-    # txt_logger.info(
-    #     "F {:06} | FPS {:04.0f} | D {} | R:μσmM {:.2f} {:.2f} {:.2f} {:.2f} | F:μσmM {:.1f} {:.1f} {} {}"
-    #     .format(*data))
-
     header += ["return_" + key for key in return_per_episode.keys()]
     data += return_per_episode.values()
 
     for field, value in zip(header, data):
         print(field, value)
-
-
-    # eval_env = args.envs
-    # eval_sampler = args.ltl_sampler
-    # model_name = args.model_name # format: "{eval_env}_{eval_sampler}_ppo_seed{args.seed}_{date}"
-    # device = "cpu"
-    # eval_procs = args.procs
-    # ignoreLTL = args.ignoreLTL
-    # eval_episodes = args.eval_episodes
-
-
-    # eval = utils.Eval(eval_env, model_name, eval_sampler,
-    #             seed=args.seed, device=device, num_procs=eval_procs, ignoreLTL=args.ignoreLTL, gnn=args.gnn)
-    # eval.eval(-1, episodes=args.eval_episodes, stdout=True)
-

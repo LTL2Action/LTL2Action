@@ -123,8 +123,8 @@ if __name__ == '__main__':
         env = ltl_wrappers.LTLEnv(env, ltl_sampler=args["ltl_sampler"], progression_mode=args["progression_mode"])
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        agent = utils.Agent(env, env.observation_space, env.get_propositions(), env.action_space, args["model_path"],
-                args["ignoreLTL"], args["progression_mode"], gnn=args["gnn"], device=device, dumb_ac=args["dumb_ac"])
+        agent = utils.Agent(env, env.observation_space, env.action_space, args["model_path"],
+                args["ignoreLTL"], args["progression_mode"], args["gnn"], device=device, dumb_ac=args["dumb_ac"])
     else:
         print("Incorrect command: ", args["command"])
         exit(1)
