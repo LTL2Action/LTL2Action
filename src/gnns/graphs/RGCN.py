@@ -59,7 +59,7 @@ class RGCNRoot(RGCN):
             else:
                 h = self.convs[i](g, h, etypes)
 
-        g.ndata['h'] = h # TODO (Pashootan): Check if this is redundant
+        g.ndata['h'] = h # TODO: Check if this is redundant
         hg = dgl.sum_nodes(g, 'h', weight='is_root')
         return self.g_embed(hg).squeeze(1)
 

@@ -9,6 +9,7 @@ import torch
 import gym
 import safety_gym
 import ltl_wrappers
+import ltl_progression
 from gym import wrappers, logger
 from envs.safety import safety_wrappers
 
@@ -65,7 +66,11 @@ def run_policy(agent, env, max_ep_len=None, num_episodes=100, render=True):
             env.render()
             time.sleep(1e-3)
 
-        env.show_text(str(env.ltl_goal))
+        ltl_goal = ltl_progression.spotify(env.ltl_goal)
+        env.show_text(ltl_goal.to_str())
+        if("progress_info" in o.keys()):
+            env.show_prog_info(o["progress_info"])
+
         a = agent.get_action(o)
         a = np.clip(a, env.action_space.low, env.action_space.high)
         o, r, d, info = env.step(a)

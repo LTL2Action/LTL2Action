@@ -1,14 +1,14 @@
 """
 This code allows to progress LTL formulas. It requires installing the SPOT library:
     - https://spot.lrde.epita.fr/install.html
-To encode LTL formulas, we use tuples, e.g., 
+To encode LTL formulas, we use tuples, e.g.,
     (
         'and',
         ('until','True', ('and', 'd', ('until','True','c'))),
         ('until','True', ('and', 'a', ('until','True', ('and', 'b', ('until','True','c')))))
     )
 Some notes about the format:
-    - It supports the following temporal operators: "next", "until", "always", and "eventually". 
+    - It supports the following temporal operators: "next", "until", "always", and "eventually".
     - It supports the following logical operators: "not", "or", "and".
     - Propositions are assume to be one char.
     - Negations are always followed by a proposition.
@@ -86,6 +86,15 @@ def progress_and_clean(ltl_formula, truth_assignment):
     return ltl_std
 
 
+def spotify(ltl_formula):
+    ltl_spot = _get_spot_format(ltl_formula)
+    f = spot.formula(ltl_spot)
+    f = spot.simplify(f)
+    ltl_spot = f.__format__("l")
+    # return ltl_spot
+    return f#.to_str('latex')
+
+
 def _get_spot_format(ltl_std):
     ltl_spot = str(ltl_std).replace("(","").replace(")","").replace(",","")
     ltl_spot = ltl_spot.replace("'until'","U").replace("'not'","!").replace("'or'","|").replace("'and'","&")
@@ -134,7 +143,7 @@ def progress(ltl_formula, truth_assignment):
             else:
                 return 'False'
         return ltl_formula
-    
+
     if ltl_formula[0] == 'not':
         # negations should be over propositions only according to the cosafe ltl syntactic restriction
         result = progress(ltl_formula[1], truth_assignment)
@@ -168,15 +177,15 @@ def progress(ltl_formula, truth_assignment):
         #if _subsume_until(res1, res2): return res1
         #if _subsume_until(res2, res1): return res2
         return ('or',res1,res2)
-    
+
     if ltl_formula[0] == 'next':
         return progress(ltl_formula[1], truth_assignment)
-    
+
     # NOTE: What about release and other temporal operators?
     if ltl_formula[0] == 'eventually':
         res = progress(ltl_formula[1], truth_assignment)
         return ("or", ltl_formula, res)
-    
+
     if ltl_formula[0] == 'always':
         res = progress(ltl_formula[1], truth_assignment)
         return ("and", ltl_formula, res)
@@ -191,7 +200,7 @@ def progress(ltl_formula, truth_assignment):
             f1 = ('until', ltl_formula[1], ltl_formula[2])
         else:
             f1 = ('and', res1, ('until', ltl_formula[1], ltl_formula[2]))
-        
+
         if res2 == 'True':
             return 'True'
         if res2 == 'False':
@@ -208,7 +217,7 @@ if __name__ == '__main__':
     #ltl = ('and',('eventually','a'),('eventually',('and','b',('eventually','c'))))
     #ltl = ('until',('not','a'),('and', 'b', ('eventually','d')))
     ltl = ('until',('not','a'),('and', 'b', ('until',('not','c'),'d')))
-    
+
     while True:
         print(ltl)
         props = input()

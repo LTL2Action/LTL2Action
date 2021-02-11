@@ -20,6 +20,9 @@ class zone(enum.Enum):
     def __str__(self):
         return self.name[0]
 
+    def __repr__(self):
+        return self.name
+
 GROUP_ZONE = 7
 
 class ZonesEnv(Engine):
