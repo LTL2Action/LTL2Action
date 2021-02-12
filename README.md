@@ -63,3 +63,5 @@ If you have a trained model for the ZoneEnv, you can use this command to run and
 
 You can evaluate trained policies using `utils/evaluator.py`. You need to specify the model path, which also supports the `*` wildcard. For example, the following command evaluates all models whose names start with `GRU` located in `storage/`. 
 `python3 utils/evaluator.py --ltl-sampler Until_1_3_1_2 --model-path storage/GRU* --procs 16  --discount 0.94 --eval-episodes 100 --gnn GRU`. 
+
+A Jupyter notebook with code for plotting experimental data is available in `plots/plotter.ipynb`.
