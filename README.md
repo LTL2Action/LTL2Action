@@ -16,4 +16,4 @@ We recommend using Python 3.6 to run this code.
 
 ## Training Agents
 
-Instructions for training and evaluating RL agents on each of our domains is available in the [`src` folder](src/).
+Instructions for training and evaluating RL agents on each of our domains is available in the [`src`](src/) folder.
