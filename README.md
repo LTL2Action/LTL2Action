@@ -2,6 +2,9 @@
 
 This is the code repository accompanying the paper [**LTL2Action: Generalizing LTL Instructions for Multi-Task RL**](https://arxiv.org/abs/2102.06858). 
 
+Our agent's behaviour, compared to a myopic one is demonstrated on ZoneEnv, a custom environment based on OpenAI's SafetyGym:
+![ZoneEnv](https://github.com/LTL2Action/LTL2Action/blob/master/zone_env.gif)
+
 ## Installation instructions
 
 
