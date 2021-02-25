@@ -4,7 +4,7 @@ This is the code repository accompanying the paper [**LTL2Action: Generalizing L
 
 Our agent's behaviour, compared to a myopic one is demonstrated on ZoneEnv, a custom environment based on OpenAI's SafetyGym:
 <p align="center">
-    <img width="500" src="https://github.com/LTL2Action/LTL2Action/blob/master/README_files/zone_env.gif">
+    <img width="700" src="https://github.com/LTL2Action/LTL2Action/blob/master/README_files/zone_env.gif">
 </p>
 
 ## Installation instructions
