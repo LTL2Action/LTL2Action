@@ -46,11 +46,6 @@ class ASTBuilder(object):
     def _one_hot(self, token):
         return self._enc.transform([[token]])[0][0].toarray()
 
-    # Shift the node ids of the nodes in g, make them start from 'index'
-    @staticmethod
-    def _shift_ids(g, index):
-        mapping = dict(zip(sorted(g), range(index, index + g.number_of_nodes())))
-        return nx.relabel_nodes(g, mapping)
 
     def _get_edge_type(self, operator, parameter_num=None):
         operator = operator.lower()
@@ -64,50 +59,47 @@ class ASTBuilder(object):
 
     # A helper function that recursively builds up the AST of the LTL formula
     @ring.lru(maxsize=60000) # Caching the formula->tree pairs in a Last Recently Used fashion
-    def _to_graph(self, formula):
+    def _to_graph(self, formula, shift=0):
         head = formula[0]
         rest = formula[1:]
         nxg  = nx.DiGraph()
 
         if head in ["until", "and", "or"]:
-            nxg.add_node(0, feat=self._one_hot(head), token=head)
-            nxg.add_edge(0, 0, type=self._get_edge_type("self"))
+            nxg.add_node(shift, feat=self._one_hot(head), token=head)
+            nxg.add_edge(shift, shift, type=self._get_edge_type("self"))
 
-            l = self._to_graph(rest[0]) # build the left subtree
-            l = self._shift_ids(l, 1)
+            l = self._to_graph(rest[0], shift+1) # build the left subtree
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self._get_edge_type("arg1")) # connect the current node to the root of the left subtree
+            nxg.add_edge(shift+1, shift, type=self._get_edge_type("arg1")) # connect the current node to the root of the left subtree
 
             index = nxg.number_of_nodes()
-            r = self._to_graph(rest[1]) # build the left subtree
-            r = self._shift_ids(r, index)
+            r = self._to_graph(rest[1], shift+index) # build the left subtree
             nxg = nx.compose(nxg, r) # combine the left subtree with the current tree
-            nxg.add_edge(index, 0, type=self._get_edge_type("arg2"))
+            nxg.add_edge(shift+index, shift, type=self._get_edge_type("arg2"))
             # if head in ["next", "until"]:
             #     nxg.add_edge(1, index, type=self.ASSYM_EDGE) # impose order on the operands of an assymetric operator
 
             return nxg
 
         if head in ["next", "eventually", "always", "not"]:
-            nxg.add_node(0, feat=self._one_hot(head), token=head)
-            nxg.add_edge(0, 0, type=self._get_edge_type("self"))
+            nxg.add_node(shift, feat=self._one_hot(head), token=head)
+            nxg.add_edge(shift, shift, type=self._get_edge_type("self"))
 
-            l = self._to_graph(rest[0]) # build the left subtree
-            l = self._shift_ids(l, 1)
+            l = self._to_graph(rest[0], shift+1) # build the left subtree
             nxg = nx.compose(nxg, l) # combine the left subtree with the current tree
-            nxg.add_edge(1, 0, type=self._get_edge_type("arg")) # connect the current node to the root of the left subtree
+            nxg.add_edge(shift+1, shift, type=self._get_edge_type("arg")) # connect the current node to the root of the left subtree
 
             return nxg
 
         if formula in ["True", "False"]:
-            nxg.add_node(0, feat=self.vocab._one_hot(formula), token=formula)
-            nxg.add_edge(0, 0, type=self._get_edge_type("self"))
+            nxg.add_node(shift, feat=self.vocab._one_hot(formula), token=formula)
+            nxg.add_edge(shift, shift, type=self._get_edge_type("self"))
 
             return nxg
 
         if formula in self.props:
-            nxg.add_node(0, feat=self._one_hot(formula.replace("'",'')), token=formula)
-            nxg.add_edge(0, 0, type=self._get_edge_type("self"))
+            nxg.add_node(shift, feat=self._one_hot(formula.replace("'",'')), token=formula)
+            nxg.add_edge(shift, shift, type=self._get_edge_type("self"))
 
             return nxg
 
@@ -115,7 +107,6 @@ class ASTBuilder(object):
         assert False, "Format error in ast_builder.ASTBuilder._to_graph()"
 
         return None
-
 
 def draw(G, formula):
     from networkx.drawing.nx_agraph import graphviz_layout
