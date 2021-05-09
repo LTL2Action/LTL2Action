@@ -2,9 +2,11 @@
 
 This is the code repository accompanying the paper [**LTL2Action: Generalizing LTL Instructions for Multi-Task RL**](https://arxiv.org/abs/2102.06858). 
 
-Our agent's behaviour, compared to a myopic one is demonstrated on ZoneEnv, a custom environment based on OpenAI's SafetyGym:
+In the **animation** below, our agent's behaviour, compared to a myopic one is demonstrated on ``ZoneEnv``, a custom environment based on OpenAI's SafetyGym:
+
 <p align="center">
     <img width="700" src="https://github.com/LTL2Action/LTL2Action/blob/master/README_files/zone_env.gif">
+<!--     <figcaption class="figure-caption text-center">Figure 1. (animation) Myopic agent vs. ours. </figcaption> -->
 </p>
 
 ## Installation instructions
