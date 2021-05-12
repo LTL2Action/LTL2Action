@@ -24,3 +24,24 @@ We recommend using Python 3.6 to run this code.
 ## Training Agents
 
 Instructions for training and evaluating RL agents on each of our domains is available in the [`src`](src/) folder.
+
+## Citation
+
+```
+@article{DBLP:journals/corr/abs-2102-06858,
+  author    = {Pashootan Vaezipoor and
+               Andrew C. Li and
+               Rodrigo Toro Icarte and
+               Sheila A. McIlraith},
+  title     = {LTL2Action: Generalizing {LTL} Instructions for Multi-Task {RL}},
+  journal   = {CoRR},
+  volume    = {abs/2102.06858},
+  year      = {2021},
+  url       = {https://arxiv.org/abs/2102.06858},
+  archivePrefix = {arXiv},
+  eprint    = {2102.06858},
+  timestamp = {Thu, 18 Feb 2021 15:26:00 +0100},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-2102-06858.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
