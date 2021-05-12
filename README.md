@@ -15,9 +15,9 @@ In the **animation** below, our agent's behaviour, compared to a myopic one is d
 We recommend using Python 3.6 to run this code.
 
 1. `pip install -r requirements.txt`
-2. Install Spot-2.9 (https://spot.lrde.epita.fr/install.html)
+2. Install [Spot-2.9](https://spot.lrde.epita.fr/install.html)
     - Follow the installation instructions at the link. Spot should be installed in `/usr/local/lib/python3.6/site-packages/spot`. This step usually takes around 20 mins.
-3. (Optional) To run the OpenAI Safety Gym, you will need Mujoco installed, as well as an active license (http://www.mujoco.org/index.html). 
+3. (Optional) To run the OpenAI Safety Gym, you will need Mujoco installed, as well as an [active license](http://www.mujoco.org/index.html). 
     - `pip install mujoco-py==2.0.2.9`
     - `pip install -e src/envs/safety/safety-gym/`
 
