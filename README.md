@@ -1,6 +1,6 @@
 # ltl2action
 
-This is the code repository accompanying the paper [**LTL2Action: Generalizing LTL Instructions for Multi-Task RL**](https://arxiv.org/abs/2102.06858). 
+This is the code repository accompanying the paper [**LTL2Action: Generalizing LTL Instructions for Multi-Task RL**](https://arxiv.org/abs/2102.06858), which will appear in ICML 2021. 
 
 In the **animation** below, our agent's behaviour, compared to a myopic one is demonstrated on ``ZoneEnv``, a custom environment based on OpenAI's SafetyGym:
 
