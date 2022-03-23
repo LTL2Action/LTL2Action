@@ -1,4 +1,4 @@
-# LTLAaction
+# LTL2Action
 
 This is the code repository accompanying the paper [**LTL2Action: Generalizing LTL Instructions for Multi-Task RL**](https://arxiv.org/abs/2102.06858), which will appear in ICML 2021. 
 
